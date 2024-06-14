@@ -28,47 +28,26 @@
         /// </summary>
         private void InitializeComponent()
         {
-            Device1 = new ListBox();
             label1 = new Label();
-            Device2 = new ListBox();
             Start = new Button();
             Stop = new Button();
             label2 = new Label();
-            textBox1 = new TextBox();
+            DHD_Status = new TextBox();
+            Device1 = new ComboBox();
+            Device2 = new ComboBox();
+            DHD_Enabled = new CheckBox();
+            DHD_Device = new ComboBox();
             SuspendLayout();
-            // 
-            // Device1
-            // 
-            Device1.AllowDrop = true;
-            Device1.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            Device1.FormattingEnabled = true;
-            Device1.ItemHeight = 31;
-            Device1.Location = new Point(12, 12);
-            Device1.Name = "Device1";
-            Device1.Size = new Size(172, 35);
-            Device1.TabIndex = 0;
-            Device1.SelectedIndexChanged += Device1_SelectedIndexChanged;
             // 
             // label1
             // 
             label1.AutoSize = true;
             label1.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            label1.Location = new Point(190, 13);
+            label1.Location = new Point(238, 12);
             label1.Name = "label1";
             label1.Size = new Size(78, 31);
             label1.TabIndex = 1;
             label1.Text = "Mirror";
-            // 
-            // Device2
-            // 
-            Device2.AllowDrop = true;
-            Device2.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            Device2.FormattingEnabled = true;
-            Device2.ItemHeight = 31;
-            Device2.Location = new Point(274, 12);
-            Device2.Name = "Device2";
-            Device2.Size = new Size(172, 35);
-            Device2.TabIndex = 2;
             // 
             // Start
             // 
@@ -78,6 +57,7 @@
             Start.TabIndex = 3;
             Start.Text = "Start";
             Start.UseVisualStyleBackColor = true;
+            Start.Click += Start_Click;
             // 
             // Stop
             // 
@@ -87,6 +67,7 @@
             Stop.TabIndex = 4;
             Stop.Text = "Stop";
             Stop.UseVisualStyleBackColor = true;
+            Stop.Click += Stop_Click;
             // 
             // label2
             // 
@@ -98,14 +79,61 @@
             label2.TabIndex = 5;
             label2.Text = "DHD";
             // 
-            // textBox1
+            // DHD_Status
             // 
-            textBox1.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            textBox1.Location = new Point(80, 53);
-            textBox1.Name = "textBox1";
-            textBox1.ReadOnly = true;
-            textBox1.Size = new Size(172, 38);
-            textBox1.TabIndex = 6;
+            DHD_Status.BackColor = Color.Firebrick;
+            DHD_Status.BorderStyle = BorderStyle.FixedSingle;
+            DHD_Status.Enabled = false;
+            DHD_Status.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            DHD_Status.Location = new Point(274, 55);
+            DHD_Status.Name = "DHD_Status";
+            DHD_Status.ReadOnly = true;
+            DHD_Status.Size = new Size(172, 38);
+            DHD_Status.TabIndex = 6;
+            DHD_Status.Text = " Not Connected";
+            DHD_Status.Visible = false;
+            DHD_Status.TextChanged += DHD_Status_TextChanged;
+            // 
+            // Device1
+            // 
+            Device1.AllowDrop = true;
+            Device1.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            Device1.FormattingEnabled = true;
+            Device1.Location = new Point(60, 10);
+            Device1.Name = "Device1";
+            Device1.Size = new Size(172, 39);
+            Device1.TabIndex = 7;
+            // 
+            // Device2
+            // 
+            Device2.AllowDrop = true;
+            Device2.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            Device2.FormattingEnabled = true;
+            Device2.Location = new Point(322, 9);
+            Device2.Name = "Device2";
+            Device2.Size = new Size(172, 39);
+            Device2.TabIndex = 8;
+            // 
+            // DHD_Enabled
+            // 
+            DHD_Enabled.AutoSize = true;
+            DHD_Enabled.Location = new Point(76, 67);
+            DHD_Enabled.Name = "DHD_Enabled";
+            DHD_Enabled.Size = new Size(18, 17);
+            DHD_Enabled.TabIndex = 9;
+            DHD_Enabled.UseVisualStyleBackColor = true;
+            DHD_Enabled.CheckedChanged += DHD_Enabled_CheckedChanged;
+            // 
+            // DHD_Device
+            // 
+            DHD_Device.AllowDrop = true;
+            DHD_Device.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            DHD_Device.FormattingEnabled = true;
+            DHD_Device.Location = new Point(100, 55);
+            DHD_Device.Name = "DHD_Device";
+            DHD_Device.Size = new Size(172, 39);
+            DHD_Device.TabIndex = 10;
+            DHD_Device.Visible = false;
             // 
             // Form1
             // 
@@ -113,27 +141,30 @@
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.AppWorkspace;
             ClientSize = new Size(682, 127);
-            Controls.Add(textBox1);
+            Controls.Add(DHD_Device);
+            Controls.Add(DHD_Enabled);
+            Controls.Add(Device2);
+            Controls.Add(Device1);
+            Controls.Add(DHD_Status);
             Controls.Add(label2);
             Controls.Add(Stop);
             Controls.Add(Start);
-            Controls.Add(Device2);
             Controls.Add(label1);
-            Controls.Add(Device1);
             Name = "Form1";
-            Text = "Form1";
+            Text = "Mirror MIDI";
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
-
-        private ListBox Device1;
         private Label label1;
-        private ListBox Device2;
         private Button Start;
         private Button Stop;
         private Label label2;
-        private TextBox textBox1;
+        private TextBox DHD_Status;
+        private ComboBox Device1;
+        private ComboBox Device2;
+        private CheckBox DHD_Enabled;
+        private ComboBox DHD_Device;
     }
 }
