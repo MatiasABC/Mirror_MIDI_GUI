@@ -75,6 +75,11 @@ namespace Mirror_MIDI
                 }
             }
 
+            Device1.Enabled = false;
+            Device2.Enabled = false;
+            DHD_Enabled.Enabled = false;
+            DHD_Device.Enabled = false;
+            Start.Enabled = false;  
             string dhdEnabled = DHD_Enabled.Checked ? "True" : "False";
             string dhdDeviceSelection = DHD_Device.SelectedItem?.ToString() ?? "None";
 
@@ -127,6 +132,13 @@ namespace Mirror_MIDI
                 pythonProcess.Dispose();
                 pythonProcess = null;
             }
+
+            Device1.Enabled = true;
+            Device2.Enabled = true;
+            DHD_Enabled.Enabled = true; 
+            DHD_Device.Enabled = true;
+            Start.Enabled = true;
+            
         }
 
         private void DHD_Enabled_CheckedChanged(object sender, EventArgs e)
