@@ -80,10 +80,10 @@ namespace Mirror_MIDI
 
             // Assuming the Python script is located in a "scripts" folder at the base directory of the project
             string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            string scriptPath = Path.Combine(baseDirectory, "..", "..", "..", "scripts", "MIDI_mirror.py");
+
 
             // Start the Python script with the selected parameters
-            StartPythonScript(scriptPath, Device1.SelectedItem.ToString(), Device2.SelectedItem.ToString(), dhdEnabled, dhdDeviceSelection);
+            StartPythonScriptAsync(Device1.SelectedItem.ToString(), Device2.SelectedItem.ToString(), dhdEnabled, dhdDeviceSelection);
 
             MessageBox.Show("Python script started.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -119,7 +119,14 @@ namespace Mirror_MIDI
                 dhdServer = null;
             }
 
-            // Handle logic to stop the process if needed
+            // Terminate the Python process if it's running
+            if (pythonProcess != null && !pythonProcess.HasExited)
+            {
+                pythonProcess.Kill();
+                pythonProcess.WaitForExit(); // Optional: Wait for the process to exit
+                pythonProcess.Dispose();
+                pythonProcess = null;
+            }
         }
 
         private void DHD_Enabled_CheckedChanged(object sender, EventArgs e)
@@ -148,29 +155,44 @@ namespace Mirror_MIDI
             }
         }
         private Process pythonProcess;
-
-        private void StartPythonScript(string scriptPath, string arg1, string arg2, string arg3, string arg4)
+        private string GetPythonScriptPath(string scriptName)
         {
-            string pythonExePath = "python";
+            // Get the full path to the directory where the executable is running
+            string exeDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+            // Construct the path to the "scripts" folder by navigating up two levels from the exe directory
+            // and then into the "scripts" folder
+            string scriptPath = Path.Combine(exeDirectory, "..", "..", "..", "scripts", scriptName);
+
+            // Get the absolute path (resolving any "..")
+            scriptPath = Path.GetFullPath(scriptPath);
+
+            return scriptPath;
+        }
+        private Process StartPythonScriptAsync(string arg1, string arg2, string arg3, string arg4)
+        {
+            string scriptName = "MIDI_mirror.py";
+            string scriptPath = GetPythonScriptPath(scriptName);
 
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
-                FileName = pythonExePath,
-                Arguments = $"\"{scriptPath}\" \"{arg1}\" \"{arg2}\"\"{arg3}\"", // Include initial arguments
+                FileName = "python",
+                Arguments = $"\"{scriptPath}\" \"{arg1}\" \"{arg2}\" \"{arg3}\" \"{arg4}\"",
                 UseShellExecute = false,
-                RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
 
-            pythonProcess = new Process { StartInfo = startInfo };
-            pythonProcess.OutputDataReceived += (sender, args) => Console.WriteLine(args.Data);
-            pythonProcess.ErrorDataReceived += (sender, args) => Console.WriteLine(args.Data);
+            Process pythonProcess = new Process { StartInfo = startInfo };
+            pythonProcess.OutputDataReceived += (sender, args) => Debug.WriteLine(args.Data);
+            pythonProcess.ErrorDataReceived += (sender, args) => Debug.WriteLine(args.Data);
 
             pythonProcess.Start();
             pythonProcess.BeginOutputReadLine();
             pythonProcess.BeginErrorReadLine();
+
+            return pythonProcess; // Return the process in case you need to interact with it later
         }
 
         private void SendDataToPythonScript(string data)
