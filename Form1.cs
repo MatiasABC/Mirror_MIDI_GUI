@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Windows.Forms;
+using System.Drawing;
+using System.Diagnostics; // Added for setting BackColor
 
 namespace Mirror_MIDI
 {
@@ -68,10 +70,9 @@ namespace Mirror_MIDI
 
                 if (DHD_Status.Text != " Connected")
                 {
-                    MessageBox.Show("Please wait for DHD connection to be stablished.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Please wait for DHD connection to be established.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-
             }
 
             // Proceed with further logic if validation is successful
@@ -84,6 +85,15 @@ namespace Mirror_MIDI
             {
                 DHD_Status.Text = " Connected";
                 DHD_Status.BackColor = Color.LimeGreen;
+            }));
+        }
+
+        private void OnClientDisconnected()
+        {
+            this.Invoke(new Action(() =>
+            {
+                DHD_Status.Text = " Disconnected";
+                DHD_Status.BackColor = Color.Red;
             }));
         }
 
@@ -105,14 +115,61 @@ namespace Mirror_MIDI
 
         private void DHD_Enabled_CheckedChanged(object sender, EventArgs e)
         {
-            if (dhdServer == null)
-            {
-                dhdServer = new DHDServer(OnClientConnected);
-                dhdServer.Start();
-            }
             bool isChecked = DHD_Enabled.Checked;
             DHD_Status.Visible = isChecked;
             DHD_Device.Visible = isChecked;
+
+            if (isChecked)
+            {
+                if (dhdServer == null)
+                {
+                    dhdServer = new DHDServer(OnClientConnected, OnClientDisconnected);
+                    dhdServer.Start();
+                }
+            }
+            else
+            {
+                if (dhdServer != null)
+                {
+                    dhdServer.Stop();
+                    dhdServer = null;
+                }
+                DHD_Status.Text = "";
+                DHD_Status.BackColor = SystemColors.Window;
+            }
+        }
+        private Process pythonProcess;
+
+        private void StartPythonScript(string scriptPath, string arg1, string arg2, string arg3)
+        {
+            string pythonExePath = "python";
+
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = pythonExePath,
+                Arguments = $"\"{scriptPath}\" \"{arg1}\" \"{arg2}\"\"{arg3}\"", // Include initial arguments
+                UseShellExecute = false,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            pythonProcess = new Process { StartInfo = startInfo };
+            pythonProcess.OutputDataReceived += (sender, args) => Console.WriteLine(args.Data);
+            pythonProcess.ErrorDataReceived += (sender, args) => Console.WriteLine(args.Data);
+
+            pythonProcess.Start();
+            pythonProcess.BeginOutputReadLine();
+            pythonProcess.BeginErrorReadLine();
+        }
+
+        private void SendDataToPythonScript(string data)
+        {
+            if (pythonProcess != null && !pythonProcess.HasExited)
+            {
+                pythonProcess.StandardInput.WriteLine(data);
+            }
         }
     }
 }

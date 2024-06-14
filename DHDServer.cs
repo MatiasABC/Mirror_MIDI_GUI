@@ -13,10 +13,12 @@ namespace Mirror_MIDI
         private Thread serverThread;
         private bool isRunning;
         private Action onClientConnected;
+        private Action onClientDisconnected;
 
-        public DHDServer(Action onClientConnected)
+        public DHDServer(Action onClientConnected, Action onClientDisconnected)
         {
             this.onClientConnected = onClientConnected;
+            this.onClientDisconnected = onClientDisconnected;
         }
 
         public void Start()
@@ -47,10 +49,9 @@ namespace Mirror_MIDI
                         clientThread.Start();
                     }
                 }
-            }
+            } 
             catch (Exception ex)
             {
-                // Handle exception (e.g., log it)
                 Console.WriteLine($"Server error: {ex.Message}");
             }
         }
@@ -64,17 +65,20 @@ namespace Mirror_MIDI
                     byte[] buffer = new byte[1024];
                     int received;
 
-                    while ((received = clientSocket.Receive(buffer, SocketFlags.None)) > 0)
+                    while (isRunning && (received = clientSocket.Receive(buffer, SocketFlags.None)) > 0)
                     {
                         string formattedData = BitConverter.ToString(buffer, 0, received).Replace("-", ",");
                         Console.WriteLine($"Received from client: {formattedData}");
                     }
+
+                    // Client disconnected
+                    onClientDisconnected?.Invoke();
                 }
             }
             catch (Exception ex)
             {
-                // Handle client exception (e.g., log it)
                 Console.WriteLine($"Client error: {ex.Message}");
+                onClientDisconnected?.Invoke();
             }
         }
 
