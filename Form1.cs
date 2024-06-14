@@ -118,11 +118,6 @@ namespace Mirror_MIDI
 
         private void Stop_Click(object sender, EventArgs e)
         {
-            if (dhdServer != null)
-            {
-                dhdServer.Stop();
-                dhdServer = null;
-            }
 
             // Terminate the Python process if it's running
             if (pythonProcess != null && !pythonProcess.HasExited)
@@ -141,7 +136,7 @@ namespace Mirror_MIDI
             
         }
 
-        private void DHD_Enabled_CheckedChanged(object sender, EventArgs e)
+        private async void DHD_Enabled_CheckedChanged(object sender, EventArgs e)
         {
             bool isChecked = DHD_Enabled.Checked;
             DHD_Status.Visible = isChecked;
@@ -152,19 +147,10 @@ namespace Mirror_MIDI
                 if (dhdServer == null)
                 {
                     dhdServer = new DHDServer(OnClientConnected, OnClientDisconnected);
-                    dhdServer.Start();
+                    await Task.Run(() => dhdServer.Start());
                 }
             }
-            else
-            {
-                if (dhdServer != null)
-                {
-                    dhdServer.Stop();
-                    dhdServer = null;
-                }
-                DHD_Status.Text = "";
-                DHD_Status.BackColor = SystemColors.Window;
-            }
+
         }
         private Process pythonProcess;
         private string GetPythonScriptPath(string scriptName)
