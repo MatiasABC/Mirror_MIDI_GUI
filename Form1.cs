@@ -75,8 +75,17 @@ namespace Mirror_MIDI
                 }
             }
 
-            // Proceed with further logic if validation is successful
-            MessageBox.Show("Logic to start the process can be implemented here.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            string dhdEnabled = DHD_Enabled.Checked ? "True" : "False";
+            string dhdDeviceSelection = DHD_Device.SelectedItem?.ToString() ?? "None";
+
+            // Assuming the Python script is located in a "scripts" folder at the base directory of the project
+            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            string scriptPath = Path.Combine(baseDirectory, "..", "..", "..", "scripts", "MIDI_mirror.py");
+
+            // Start the Python script with the selected parameters
+            StartPythonScript(scriptPath, Device1.SelectedItem.ToString(), Device2.SelectedItem.ToString(), dhdEnabled, dhdDeviceSelection);
+
+            MessageBox.Show("Python script started.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void OnClientConnected()
@@ -140,7 +149,7 @@ namespace Mirror_MIDI
         }
         private Process pythonProcess;
 
-        private void StartPythonScript(string scriptPath, string arg1, string arg2, string arg3)
+        private void StartPythonScript(string scriptPath, string arg1, string arg2, string arg3, string arg4)
         {
             string pythonExePath = "python";
 
