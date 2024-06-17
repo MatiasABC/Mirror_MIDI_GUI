@@ -101,33 +101,45 @@ namespace Mirror_MIDI
                 StopPythonScript();
             }
 
+            // Use 'cmd.exe' to start the Python script directly
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
-                FileName = "cmd.exe",
-                Arguments = $"/C python \"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\"",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = false // Change to false to see the terminal window
+                FileName = "python",
+                Arguments = $"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\"",
+                UseShellExecute = true,
+                RedirectStandardOutput = false,
+                RedirectStandardError = false,
+                CreateNoWindow = false
             };
 
             pythonProcess = new Process { StartInfo = startInfo };
-            pythonProcess.OutputDataReceived += (sender, args) => Debug.WriteLine(args.Data);
-            pythonProcess.ErrorDataReceived += (sender, args) => Debug.WriteLine(args.Data);
-
             pythonProcess.Start();
-            pythonProcess.BeginOutputReadLine();
-            pythonProcess.BeginErrorReadLine();
         }
+
+
 
         private void StopPythonScript()
         {
-            if (pythonProcess != null && !pythonProcess.HasExited)
+            if (pythonProcess != null)
             {
                 try
                 {
-                    pythonProcess.Kill();
-                    pythonProcess.WaitForExit();
+                    // Use taskkill to terminate the process and its terminal
+                    ProcessStartInfo killStartInfo = new ProcessStartInfo
+                    {
+                        FileName = "cmd.exe",
+                        Arguments = $"/c taskkill /F /T /PID {pythonProcess.Id}",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = false,
+                        RedirectStandardError = false,
+                        CreateNoWindow = true
+                    };
+
+                    using (var killProcess = new Process { StartInfo = killStartInfo })
+                    {
+                        killProcess.Start();
+                        killProcess.WaitForExit();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -140,6 +152,8 @@ namespace Mirror_MIDI
                 }
             }
         }
+
+
 
         private string GetPythonScriptPath(string scriptName)
         {
