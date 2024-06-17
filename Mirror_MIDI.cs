@@ -9,6 +9,7 @@ namespace Mirror_MIDI
     public partial class Form1 : Form
     {
         private Process pythonProcess;
+        private DHDServer dhdServer;
 
         public Form1()
         {
@@ -85,6 +86,11 @@ namespace Mirror_MIDI
 
         private void Stop_Click(object sender, EventArgs e)
         {
+            if (dhdServer != null)
+            {
+                dhdServer.Stop();
+                dhdServer = null;
+            }
             StopPythonScript();
 
             Device1.Enabled = true;
@@ -108,14 +114,18 @@ namespace Mirror_MIDI
             {
                 FileName = "python",
                 Arguments = $"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\"",
-                UseShellExecute = true,
-                RedirectStandardOutput = false,
-                RedirectStandardError = false,
-                CreateNoWindow = false
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
             };
 
             pythonProcess = new Process { StartInfo = startInfo };
+            pythonProcess.OutputDataReceived += PythonProcess_OutputDataReceived;
+            pythonProcess.ErrorDataReceived += PythonProcess_ErrorDataReceived;
             pythonProcess.Start();
+            pythonProcess.BeginOutputReadLine();
+            pythonProcess.BeginErrorReadLine();
         }
 
         private void StopPythonScript()
@@ -183,11 +193,52 @@ namespace Mirror_MIDI
             bool isChecked = DHD_Enabled.Checked;
             DHD_Status.Visible = isChecked;
             DHD_Device.Visible = isChecked;
+
+            if (isChecked)
+            {
+                if (dhdServer == null)
+                {
+                    dhdServer = new DHDServer(OnClientConnected, OnClientDisconnected);
+                    dhdServer.Start();
+                }
+            }
+            else
+            {
+                if (dhdServer != null)
+                {
+                    dhdServer.Stop();
+                    dhdServer = null;
+                }
+                DHD_Status.Text = "";
+                DHD_Status.BackColor = SystemColors.Window;
+            }
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             StopPythonScript();
+        }
+
+        private void PythonProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(e.Data))
+            {
+                this.Invoke(new Action(() =>
+                {
+                    MessageBox.Show(e.Data, "Python Output", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }));
+            }
+        }
+
+        private void PythonProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(e.Data))
+            {
+                this.Invoke(new Action(() =>
+                {
+                    MessageBox.Show(e.Data, "Python Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }));
+            }
         }
     }
 }

@@ -66,7 +66,7 @@ def nrpn_to_cc(nrpn_number, data_value, input_channel, channel_map, nrpn_to_cc_m
             nrpn_to_cc.last_values[key] = data_value
             nrpn_to_cc.last_times[key] = current_time
             scaled_data_value = data_value >> 7  # Correct scaling
-            print(f"Converting NRPN {nrpn_number} (value {data_value}) on channel {input_channel} to CC {cc_number} on channel {output_channel}")
+            #print(f"Converting NRPN {nrpn_number} (value {data_value}) on channel {input_channel} to CC {cc_number} on channel {output_channel}")
             return mido.Message('control_change', control=cc_number, value=scaled_data_value, channel=output_channel)
         elif time_elapsed < min_interval:
             return None  # Do not send yet
@@ -116,16 +116,16 @@ def mirror_midi(input_device_name, output_device_name, channel_map, cc_to_nrpn_m
             if now - last_send_time > delay:
                 send_messages()
 
-            print(f"Received message: {message}")
+            #print(f"Received message: {message}")
             if message.type == 'control_change':
                 if is_nrpn_control(message.control):
                     result = process_nrpn_messages(nrpn_cache, message)
                     if result:
                         nrpn_number, data_value = result
-                        print(f"Processing NRPN message: NRPN {nrpn_number}, Data Value {data_value}")
+                        #print(f"Processing NRPN message: NRPN {nrpn_number}, Data Value {data_value}")
                         transformed_message = nrpn_to_cc(nrpn_number, data_value, message.channel, channel_map, nrpn_to_cc_map)
                         if transformed_message:
-                            print(f"Transformed NRPN to CC: {transformed_message}")
+                            #print(f"Transformed NRPN to CC: {transformed_message}")
                             message_queue.append(transformed_message)
                     continue
                 #print("message control", message.control, "message value", message.value)
