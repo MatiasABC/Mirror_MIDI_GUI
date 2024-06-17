@@ -5,175 +5,19 @@
 		<channel>1</channel>
 	</midi>
 	<faders>
-		<fader id="1">
-			<NRPN>true</NRPN>
-			<NRPN_number>4110</NRPN_number>
-			<min_value>0</min_value>
-			<max_value>127</max_value>
-			<message_type>
-				<control_change>
-					<enabled>false</enabled>
-					<control_value>1</control_value>
-				</control_change>
-				<note_on>false</note_on>
-				<note_off>false</note_off>
-			</message_type>
-		</fader>
-		<fader id="2">
-			<NRPN>true</NRPN>
-			<NRPN_number>4247</NRPN_number>
-			<min_value>0</min_value>
-			<max_value>127</max_value>
-			<message_type>
-				<control_change>
-					<enabled>false</enabled>
-					<control_value>2</control_value>
-				</control_change>
-				<note_on>false</note_on>
-				<note_off>false</note_off>
-			</message_type>
-		</fader>
-		<fader id="3">
-			<NRPN>true</NRPN>
-			<NRPN_number>4375</NRPN_number>
-			<min_value>0</min_value>
-			<max_value>127</max_value>
-			<message_type>
-				<control_change>
-					<enabled>false</enabled>
-					<control_value>3</control_value>
-				</control_change>
-				<note_on>false</note_on>
-				<note_off>false</note_off>
-			</message_type>
-		</fader>
-		<fader id="4">
-			<NRPN>true</NRPN>
-			<NRPN_number>4503</NRPN_number>
-			<min_value>0</min_value>
-			<max_value>127</max_value>
-			<message_type>
-				<control_change>
-					<enabled>false</enabled>
-					<control_value>4</control_value>
-				</control_change>
-				<note_on>false</note_on>
-				<note_off>false</note_off>
-			</message_type>
-		</fader>
-		<fader id="5">
-			<NRPN>true</NRPN>
-			<NRPN_number>4631</NRPN_number>
-			<min_value>0</min_value>
-			<max_value>127</max_value>
-			<message_type>
-				<control_change>
-					<enabled>false</enabled>
-					<control_value>5</control_value>
-				</control_change>
-				<note_on>false</note_on>
-				<note_off>false</note_off>
-			</message_type>
-		</fader>
-		<fader id="6">
-			<NRPN>true</NRPN>
-			<NRPN_number>4759</NRPN_number>
-			<min_value>0</min_value>
-			<max_value>127</max_value>
-			<message_type>
-				<control_change>
-					<enabled>false</enabled>
-					<control_value>6</control_value>
-				</control_change>
-				<note_on>false</note_on>
-				<note_off>false</note_off>
-			</message_type>
-		</fader>
+		<fader id="1" type="NRPN" value="4119"/>
+		<fader id="2" type="NRPN" value="4247"/>
+		<fader id="3" type="NRPN" value="4375"/>
+		<fader id="4" type="NRPN" value="4503"/>
+		<fader id="5" type="NRPN" value="4631"/>
+		<fader id="6" type="NRPN" value="4759"/>
 	</faders>
 	<fader_buttons>
-		<fader_button id="1">
-			<NRPN>false</NRPN>
-			<NRPN_number>0</NRPN_number>
-			<message_type>
-				<control_change>
-					<enabled>true</enabled>
-					<control_value>7</control_value>
-				</control_change>
-				<note_on>true</note_on>
-				<note_off>true</note_off>
-			</message_type>
-		</fader_button>
-		<fader_button id="2">
-			<NRPN>false</NRPN>
-			<NRPN_number>0</NRPN_number>
-			<message_type>
-				<control_change>
-					<enabled>true</enabled>
-					<control_value>8</control_value>
-				</control_change>
-				<note_on>true</note_on>
-				<note_off>true</note_off>
-			</message_type>
-		</fader_button>
-		<fader_button id="3">
-			<NRPN>false</NRPN>
-			<NRPN_number>false</NRPN_number>
-			<message_type>
-				<control_change>
-					<enabled>true</enabled>
-					<control_value>9</control_value>
-				</control_change>
-				<note_on>true</note_on>
-				<note_off>true</note_off>
-			</message_type>
-		</fader_button>
-		<fader_button id="4">
-			<NRPN>false</NRPN>
-			<NRPN_number>0</NRPN_number>
-			<message_type>
-				<control_change>
-					<enabled>true</enabled>
-					<control_value>10</control_value>
-				</control_change>
-				<note_on>true</note_on>
-				<note_off>true</note_off>
-			</message_type>
-		</fader_button>
-		<fader_button id="5">
-			<NRPN>false</NRPN>
-			<NRPN_number>0</NRPN_number>
-			<message_type>
-				<control_change>
-					<enabled>true</enabled>
-					<control_value>11</control_value>
-				</control_change>
-				<note_on>true</note_on>
-				<note_off>true</note_off>
-			</message_type>
-		</fader_button>
-		<fader_button id="6">
-			<NRPN>false</NRPN>
-			<NRPN_number>0</NRPN_number>
-			<message_type>
-				<control_change>
-					<enabled>true</enabled>
-					<control_value>12</control_value>
-				</control_change>
-				<note_on>true</note_on>
-				<note_off>true</note_off>
-			</message_type>
-		</fader_button>
+		<fader_button id="1" type="control_change" value="7"/>
+		<fader_button id="2" type="control_change" value="8"/>
+		<fader_button id="3" type="control_change" value="9"/>
+		<fader_button id="4" type="control_change" value="10"/>
+		<fader_button id="5" type="control_change" value="11"/>
+		<fader_button id="6" type="control_change" value="12"/>
 	</fader_buttons>
-	<sync_button>
-		<NRPN>false</NRPN>
-		<NRPN_number>104</NRPN_number>
-		<message_type>
-			<control_change>
-				<enabled>true</enabled>
-				<control_value>13</control_value>
-			</control_change>
-			<note_on>true</note_on>
-			<note_off>true</note_off>
-		</message_type>
-	</sync_button>
 </configuration>

@@ -8,34 +8,39 @@ import time
 from collections import deque
 
 def cc_to_nrpn(cc_number, data_value, input_channel, channel_map, cc_to_nrpn_map):
+    print("cc_number",cc_number)
+    print("cc_to_nrpn_map",cc_to_nrpn_map)
+    # Validate data_value is within the MIDI range of 0-127
     if not (0 <= data_value <= 127):
         raise ValueError("data_value must be between 0 and 127")
-
+        
     if cc_number in cc_to_nrpn_map:
         nrpn_number, nrpn_output_channel = cc_to_nrpn_map[cc_number]
-        if nrpn_number == 0:
-            print(f"Skipping invalid NRPN mapping for CC {cc_number}")
-            return None
         output_channel = channel_map.get(input_channel, nrpn_output_channel)
 
+        # Compute NRPN number parts
         msb = (nrpn_number >> 7) & 0x7F
         lsb = nrpn_number & 0x7F
 
         print(f"Converting CC {cc_number} (value {data_value}) on channel {input_channel} to NRPN {nrpn_number} on channel {output_channel}")
+        print(f"NRPN MSB: {msb}, NRPN LSB: {lsb}")
+
+        # Create and return a list of MIDI messages to form the complete NRPN message
         return [
             mido.Message('control_change', control=99, value=msb, channel=output_channel),
             mido.Message('control_change', control=98, value=lsb, channel=output_channel),
             mido.Message('control_change', control=6, value=data_value, channel=output_channel),
-            mido.Message('control_change', control=38, value=0, channel=output_channel)  # Assuming LSB of data value is 0
+            mido.Message('control_change', control=38, value=0, channel=output_channel)  # Setting LSB to 0
         ]
+    else:
+        print(f"No mapping found for CC {cc_number}")
     return None
 
+
 def nrpn_to_cc(nrpn_number, data_value, input_channel, channel_map, nrpn_to_cc_map, threshold=20, min_interval=0.5, max_interval=0.7):
+    print(f"nrpn_to_cc called with NRPN {nrpn_number}, Data Value {data_value}, Input Channel {input_channel}")
     if nrpn_number in nrpn_to_cc_map:
         cc_number, default_output_channel = nrpn_to_cc_map[nrpn_number]
-        if cc_number == 0:
-            print(f"Skipping invalid CC mapping for NRPN {nrpn_number}")
-            return None
         output_channel = channel_map.get(input_channel, default_output_channel)
 
         if not hasattr(nrpn_to_cc, 'last_values'):
@@ -46,10 +51,11 @@ def nrpn_to_cc(nrpn_number, data_value, input_channel, channel_map, nrpn_to_cc_m
         key = (output_channel, cc_number)
         current_time = time.time()
 
+        # Initialize last value and time if not present
         if key not in nrpn_to_cc.last_values:
             nrpn_to_cc.last_values[key] = data_value
             nrpn_to_cc.last_times[key] = current_time
-            return None
+            return None  # Skip sending the first time to initialize
 
         last_value = nrpn_to_cc.last_values[key]
         last_time = nrpn_to_cc.last_times[key]
@@ -57,16 +63,20 @@ def nrpn_to_cc(nrpn_number, data_value, input_channel, channel_map, nrpn_to_cc_m
         value_change = abs(data_value - last_value)
         time_elapsed = current_time - last_time
 
+        # Check if the message should be sent
         if (value_change >= threshold or time_elapsed >= max_interval):
             nrpn_to_cc.last_values[key] = data_value
             nrpn_to_cc.last_times[key] = current_time
-            scaled_data_value = data_value >> 7
+            scaled_data_value = data_value >> 7  # Correct scaling
             print(f"Converting NRPN {nrpn_number} (value {data_value}) on channel {input_channel} to CC {cc_number} on channel {output_channel}")
             return mido.Message('control_change', control=cc_number, value=scaled_data_value, channel=output_channel)
         elif time_elapsed < min_interval:
-            return None
+            return None  # Do not send yet
+    else:
+        print(f"No mapping found for NRPN {nrpn_number}")
 
     return None
+
 
 def is_nrpn_control(control):
     return control in [98, 99, 6, 38]
@@ -88,7 +98,7 @@ def process_nrpn_messages(nrpn_cache, message):
         return nrpn_number, data_value
     return None
 
-def mirror_midi(input_device_name, output_device_name, channel_map, convert_func, mapping, delay=0.05):
+def mirror_midi(input_device_name, output_device_name, channel_map, cc_to_nrpn_map, nrpn_to_cc_map, delay=0.001):
     message_queue = deque()
     last_send_time = time.time()
     nrpn_cache = {}
@@ -97,6 +107,7 @@ def mirror_midi(input_device_name, output_device_name, channel_map, convert_func
         nonlocal last_send_time
         while message_queue:
             msg = message_queue.popleft()
+            print(f"Sending message: {msg}")
             outport.send(msg)
         last_send_time = time.time()
 
@@ -107,20 +118,29 @@ def mirror_midi(input_device_name, output_device_name, channel_map, convert_func
             if now - last_send_time > delay:
                 send_messages()
 
+            print(f"Received message: {message}")
             if message.type == 'control_change':
                 if is_nrpn_control(message.control):
                     result = process_nrpn_messages(nrpn_cache, message)
                     if result:
                         nrpn_number, data_value = result
-                        transformed_message = convert_func(nrpn_number, data_value, message.channel, channel_map, mapping)
+                        print(f"Processing NRPN message: NRPN {nrpn_number}, Data Value {data_value}")
+                        transformed_message = nrpn_to_cc(nrpn_number, data_value, message.channel, channel_map, nrpn_to_cc_map)
                         if transformed_message:
+                            print(f"Transformed NRPN to CC: {transformed_message}")
                             message_queue.append(transformed_message)
                     continue
-                transformed_message = convert_func(message.control, message.value, message.channel, channel_map, mapping)
+                print("message control", message.control, "message value", message.value)
+                transformed_message = cc_to_nrpn(message.control, message.value, message.channel, channel_map, cc_to_nrpn_map)
                 if transformed_message:
-                    message_queue.extend(transformed_message)
+                    for msg in transformed_message:
+                        print(f"Transformed CC to NRPN message: {msg}")
+                        message_queue.append(msg)
             else:
                 message_queue.append(message)
+
+    send_messages()  # Ensure any remaining messages are sent
+
 
 def read_xml_config(file_name):
     configs_path = os.path.join(os.path.dirname(__file__), '..', 'configs', file_name)
@@ -148,34 +168,18 @@ def parse_config(xml_root):
     
     for fader in xml_root.findall('./faders/fader'):
         fader_id = int(fader.get('id'))
-        nrpn_number = fader.find('NRPN_number').text
         fader_config = {
-            'nrpn': fader.find('NRPN').text.lower() == 'true',
-            'nrpn_number': int(nrpn_number) if nrpn_number.isdigit() else 0,
-            'min_value': int(fader.find('min_value').text),
-            'max_value': int(fader.find('max_value').text),
-            'message_type': {
-                'control_change': fader.find('./message_type/control_change/enabled').text.lower() == 'true',
-                'control_value': int(fader.find('./message_type/control_change/control_value').text),
-                'note_on': fader.find('./message_type/note_on').text.lower() == 'true',
-                'note_off': fader.find('./message_type/note_off').text.lower() == 'true'
-            }
+            'type': fader.get('type'),
+            'value': int(fader.get('value')),
         }
         config['faders'][fader_id] = fader_config
         print(f"Fader {fader_id}: {fader_config}")
 
     for button in xml_root.findall('./fader_buttons/fader_button'):
         button_id = int(button.get('id'))
-        nrpn_number = button.find('NRPN_number').text
         button_config = {
-            'nrpn': button.find('NRPN').text.lower() == 'true',
-            'nrpn_number': int(nrpn_number) if nrpn_number.isdigit() else 0,
-            'message_type': {
-                'control_change': button.find('./message_type/control_change/enabled').text.lower() == 'true',
-                'control_value': int(button.find('./message_type/control_change/control_value').text),
-                'note_on': button.find('./message_type/note_on').text.lower() == 'true',
-                'note_off': button.find('./message_type/note_off').text.lower() == 'true'
-            }
+            'type': button.get('type'),
+            'value': int(button.get('value')),
         }
         config['fader_buttons'][button_id] = button_config
         print(f"Button {button_id}: {button_config}")
@@ -185,27 +189,33 @@ def parse_config(xml_root):
 def build_mappings(device1_config, device2_config):
     cc_to_nrpn_map = {}
     nrpn_to_cc_map = {}
-    
-    for fader_id, fader in device1_config['faders'].items():
-        if fader['message_type']['control_change']:
-            cc_to_nrpn_map[fader['message_type']['control_value']] = (fader['nrpn_number'], device2_config['channel'])
-            print(f"Mapping CC {fader['message_type']['control_value']} to NRPN {fader['nrpn_number']} for device 1")
-    
-    for fader_id, fader in device2_config['faders'].items():
-        if fader['message_type']['control_change']:
-            nrpn_to_cc_map[fader['nrpn_number']] = (fader['message_type']['control_value'], device1_config['channel'])
-            print(f"Mapping NRPN {fader['nrpn_number']} to CC {fader['message_type']['control_value']} for device 2")
 
-    return cc_to_nrpn_map, nrpn_to_cc_map
+    # Map faders from device 1 to device 2
+    for fader_id, fader in device1_config['faders'].items():
+        if fader['type'] == 'NRPN':
+            if fader_id in device2_config['faders'] and device2_config['faders'][fader_id]['type'] == 'control_change':
+                nrpn_to_cc_map[fader['value']] = (device2_config['faders'][fader_id]['value'], device2_config['channel'])
+                print(f"Mapping NRPN {fader['value']} to CC {device2_config['faders'][fader_id]['value']} for device 1")
+
+    # Map faders from device 2 to device 1
+    for fader_id, fader in device2_config['faders'].items():
+        if fader['type'] == 'control_change':
+            if fader_id in device1_config['faders'] and device1_config['faders'][fader_id]['type'] == 'NRPN':
+                cc_to_nrpn_map[fader['value']] = (device1_config['faders'][fader_id]['value'], device1_config['channel'])
+                print(f"Mapping CC {fader['value']} to NRPN {device1_config['faders'][fader_id]['value']} for device 2")
+
+    return nrpn_to_cc_map,cc_to_nrpn_map
+
+
 
 def get_conversion_function(config1, config2):
     # Check if both are NRPN
-    if all(fader['nrpn'] for fader in config1['faders'].values()) and \
-       all(fader['nrpn'] for fader in config2['faders'].values()):
+    if all(fader['type'] == 'NRPN' for fader in config1['faders'].values()) and \
+       all(fader['type'] == 'NRPN' for fader in config2['faders'].values()):
         return nrpn_to_cc, nrpn_to_cc
     # Check if both are non-NRPN
-    elif all(not fader['nrpn'] for fader in config1['faders'].values()) and \
-         all(not fader['nrpn'] for fader in config2['faders'].values()):
+    elif all(fader['type'] == 'control_change' for fader in config1['faders'].values()) and \
+         all(fader['type'] == 'control_change' for fader in config2['faders'].values()):
         return cc_to_nrpn, cc_to_nrpn
     # Mixed NRPN and non-NRPN
     else:
@@ -274,11 +284,11 @@ def main():
 
     threading.Thread(target=mirror_midi, args=(
         device1_config['midi_in_name'], device2_config['midi_out_name'], 
-        {device1_config['channel']: device2_config['channel']}, convert_func1, cc_to_nrpn_map)).start()
+        {device1_config['channel']: device2_config['channel']}, nrpn_to_cc_map, cc_to_nrpn_map)).start()
     
     threading.Thread(target=mirror_midi, args=(
         device2_config['midi_in_name'], device1_config['midi_out_name'], 
-        {device2_config['channel']: device1_config['channel']}, convert_func2, nrpn_to_cc_map)).start()
-
+        {device2_config['channel']: device1_config['channel']}, nrpn_to_cc_map, cc_to_nrpn_map)).start()
+        
 if __name__ == "__main__":
     main()
