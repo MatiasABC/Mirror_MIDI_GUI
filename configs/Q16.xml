@@ -1,18 +1,18 @@
 ﻿<configuration>
 	<midi>
-		<midi_in_name>X-TOUCH COMPACT 1</midi_in_name>
-		<midi_out_name>X-TOUCH COMPACT 2</midi_out_name>
-		<channel>0</channel>
+		<midi_in_name>QU-16 MIDI In 0</midi_in_name>
+		<midi_out_name>QU-16 MIDI Out 1</midi_out_name>
+		<channel>1</channel>
 	</midi>
 	<faders>
 		<fader id="1">
-			<NRPN>false</NRPN>
-			<NRPN_number>0</NRPN_number>
+			<NRPN>true</NRPN>
+			<NRPN_number>4110</NRPN_number>
 			<min_value>0</min_value>
 			<max_value>127</max_value>
 			<message_type>
 				<control_change>
-					<enabled>true</enabled>
+					<enabled>false</enabled>
 					<control_value>1</control_value>
 				</control_change>
 				<note_on>false</note_on>
@@ -20,13 +20,13 @@
 			</message_type>
 		</fader>
 		<fader id="2">
-			<NRPN>false</NRPN>
-			<NRPN_number>0</NRPN_number>
+			<NRPN>true</NRPN>
+			<NRPN_number>4247</NRPN_number>
 			<min_value>0</min_value>
 			<max_value>127</max_value>
 			<message_type>
 				<control_change>
-					<enabled>true</enabled>
+					<enabled>false</enabled>
 					<control_value>2</control_value>
 				</control_change>
 				<note_on>false</note_on>
@@ -34,13 +34,13 @@
 			</message_type>
 		</fader>
 		<fader id="3">
-			<NRPN>false</NRPN>
-			<NRPN_number>0</NRPN_number>
+			<NRPN>true</NRPN>
+			<NRPN_number>4375</NRPN_number>
 			<min_value>0</min_value>
 			<max_value>127</max_value>
 			<message_type>
 				<control_change>
-					<enabled>true</enabled>
+					<enabled>false</enabled>
 					<control_value>3</control_value>
 				</control_change>
 				<note_on>false</note_on>
@@ -48,13 +48,13 @@
 			</message_type>
 		</fader>
 		<fader id="4">
-			<NRPN>false</NRPN>
-			<NRPN_number>0</NRPN_number>
+			<NRPN>true</NRPN>
+			<NRPN_number>4503</NRPN_number>
 			<min_value>0</min_value>
 			<max_value>127</max_value>
 			<message_type>
 				<control_change>
-					<enabled>true</enabled>
+					<enabled>false</enabled>
 					<control_value>4</control_value>
 				</control_change>
 				<note_on>false</note_on>
@@ -62,13 +62,13 @@
 			</message_type>
 		</fader>
 		<fader id="5">
-			<NRPN>false</NRPN>
-			<NRPN_number>0</NRPN_number>
+			<NRPN>true</NRPN>
+			<NRPN_number>4631</NRPN_number>
 			<min_value>0</min_value>
 			<max_value>127</max_value>
 			<message_type>
 				<control_change>
-					<enabled>true</enabled>
+					<enabled>false</enabled>
 					<control_value>5</control_value>
 				</control_change>
 				<note_on>false</note_on>
@@ -76,13 +76,13 @@
 			</message_type>
 		</fader>
 		<fader id="6">
-			<NRPN>false</NRPN>
-			<NRPN_number>0</NRPN_number>
+			<NRPN>true</NRPN>
+			<NRPN_number>4759</NRPN_number>
 			<min_value>0</min_value>
 			<max_value>127</max_value>
 			<message_type>
 				<control_change>
-					<enabled>true</enabled>
+					<enabled>false</enabled>
 					<control_value>6</control_value>
 				</control_change>
 				<note_on>false</note_on>

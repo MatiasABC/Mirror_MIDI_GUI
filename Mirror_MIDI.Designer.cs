@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             label1 = new Label();
             Start = new Button();
             Stop = new Button();
@@ -92,7 +93,6 @@
             DHD_Status.TabIndex = 6;
             DHD_Status.Text = " Not Connected";
             DHD_Status.Visible = false;
-            DHD_Status.TextChanged += DHD_Status_TextChanged;
             // 
             // Device1
             // 
@@ -150,6 +150,7 @@
             Controls.Add(Stop);
             Controls.Add(Start);
             Controls.Add(label1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Form1";
             Text = "Mirror MIDI";
             ResumeLayout(false);
