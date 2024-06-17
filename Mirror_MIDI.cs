@@ -14,6 +14,9 @@ namespace Mirror_MIDI
         {
             InitializeComponent();
             PopulateDeviceLists();
+
+            // Add the FormClosing event handler
+            this.FormClosing += new FormClosingEventHandler(Form1_FormClosing);
         }
 
         private void PopulateDeviceLists()
@@ -101,7 +104,6 @@ namespace Mirror_MIDI
                 StopPythonScript();
             }
 
-            // Use 'cmd.exe' to start the Python script directly
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
                 FileName = "python",
@@ -116,15 +118,12 @@ namespace Mirror_MIDI
             pythonProcess.Start();
         }
 
-
-
         private void StopPythonScript()
         {
             if (pythonProcess != null)
             {
                 try
                 {
-                    // Use taskkill to terminate the process and its terminal
                     ProcessStartInfo killStartInfo = new ProcessStartInfo
                     {
                         FileName = "cmd.exe",
@@ -152,8 +151,6 @@ namespace Mirror_MIDI
                 }
             }
         }
-
-
 
         private string GetPythonScriptPath(string scriptName)
         {
@@ -186,6 +183,11 @@ namespace Mirror_MIDI
             bool isChecked = DHD_Enabled.Checked;
             DHD_Status.Visible = isChecked;
             DHD_Device.Visible = isChecked;
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            StopPythonScript();
         }
     }
 }

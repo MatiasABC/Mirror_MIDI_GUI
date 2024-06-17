@@ -8,8 +8,6 @@ import time
 from collections import deque
 
 def cc_to_nrpn(cc_number, data_value, input_channel, channel_map, cc_to_nrpn_map):
-    print("cc_number",cc_number)
-    print("cc_to_nrpn_map",cc_to_nrpn_map)
     # Validate data_value is within the MIDI range of 0-127
     if not (0 <= data_value <= 127):
         raise ValueError("data_value must be between 0 and 127")
@@ -22,8 +20,8 @@ def cc_to_nrpn(cc_number, data_value, input_channel, channel_map, cc_to_nrpn_map
         msb = (nrpn_number >> 7) & 0x7F
         lsb = nrpn_number & 0x7F
 
-        print(f"Converting CC {cc_number} (value {data_value}) on channel {input_channel} to NRPN {nrpn_number} on channel {output_channel}")
-        print(f"NRPN MSB: {msb}, NRPN LSB: {lsb}")
+        #print(f"Converting CC {cc_number} (value {data_value}) on channel {input_channel} to NRPN {nrpn_number} on channel {output_channel}")
+        #print(f"NRPN MSB: {msb}, NRPN LSB: {lsb}")
 
         # Create and return a list of MIDI messages to form the complete NRPN message
         return [
@@ -38,7 +36,7 @@ def cc_to_nrpn(cc_number, data_value, input_channel, channel_map, cc_to_nrpn_map
 
 
 def nrpn_to_cc(nrpn_number, data_value, input_channel, channel_map, nrpn_to_cc_map, threshold=20, min_interval=0.5, max_interval=0.7):
-    print(f"nrpn_to_cc called with NRPN {nrpn_number}, Data Value {data_value}, Input Channel {input_channel}")
+    #print(f"nrpn_to_cc called with NRPN {nrpn_number}, Data Value {data_value}, Input Channel {input_channel}")
     if nrpn_number in nrpn_to_cc_map:
         cc_number, default_output_channel = nrpn_to_cc_map[nrpn_number]
         output_channel = channel_map.get(input_channel, default_output_channel)
@@ -107,7 +105,7 @@ def mirror_midi(input_device_name, output_device_name, channel_map, cc_to_nrpn_m
         nonlocal last_send_time
         while message_queue:
             msg = message_queue.popleft()
-            print(f"Sending message: {msg}")
+            #print(f"Sending message: {msg}")
             outport.send(msg)
         last_send_time = time.time()
 
@@ -130,11 +128,11 @@ def mirror_midi(input_device_name, output_device_name, channel_map, cc_to_nrpn_m
                             print(f"Transformed NRPN to CC: {transformed_message}")
                             message_queue.append(transformed_message)
                     continue
-                print("message control", message.control, "message value", message.value)
+                #print("message control", message.control, "message value", message.value)
                 transformed_message = cc_to_nrpn(message.control, message.value, message.channel, channel_map, cc_to_nrpn_map)
                 if transformed_message:
                     for msg in transformed_message:
-                        print(f"Transformed CC to NRPN message: {msg}")
+                        #print(f"Transformed CC to NRPN message: {msg}")
                         message_queue.append(msg)
             else:
                 message_queue.append(message)
@@ -173,7 +171,7 @@ def parse_config(xml_root):
             'value': int(fader.get('value')),
         }
         config['faders'][fader_id] = fader_config
-        print(f"Fader {fader_id}: {fader_config}")
+        #print(f"Fader {fader_id}: {fader_config}")
 
     for button in xml_root.findall('./fader_buttons/fader_button'):
         button_id = int(button.get('id'))
@@ -182,7 +180,7 @@ def parse_config(xml_root):
             'value': int(button.get('value')),
         }
         config['fader_buttons'][button_id] = button_config
-        print(f"Button {button_id}: {button_config}")
+        #print(f"Button {button_id}: {button_config}")
 
     return config
 
@@ -195,14 +193,14 @@ def build_mappings(device1_config, device2_config):
         if fader['type'] == 'NRPN':
             if fader_id in device2_config['faders'] and device2_config['faders'][fader_id]['type'] == 'control_change':
                 nrpn_to_cc_map[fader['value']] = (device2_config['faders'][fader_id]['value'], device2_config['channel'])
-                print(f"Mapping NRPN {fader['value']} to CC {device2_config['faders'][fader_id]['value']} for device 1")
+                #print(f"Mapping NRPN {fader['value']} to CC {device2_config['faders'][fader_id]['value']} for device 1")
 
     # Map faders from device 2 to device 1
     for fader_id, fader in device2_config['faders'].items():
         if fader['type'] == 'control_change':
             if fader_id in device1_config['faders'] and device1_config['faders'][fader_id]['type'] == 'NRPN':
                 cc_to_nrpn_map[fader['value']] = (device1_config['faders'][fader_id]['value'], device1_config['channel'])
-                print(f"Mapping CC {fader['value']} to NRPN {device1_config['faders'][fader_id]['value']} for device 2")
+                #print(f"Mapping CC {fader['value']} to NRPN {device1_config['faders'][fader_id]['value']} for device 2")
 
     return nrpn_to_cc_map,cc_to_nrpn_map
 
