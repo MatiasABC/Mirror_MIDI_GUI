@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Diagnostics;
 
 namespace Mirror_MIDI
 {
@@ -68,7 +69,7 @@ namespace Mirror_MIDI
                     while (isRunning && (received = clientSocket.Receive(buffer, SocketFlags.None)) > 0)
                     {
                         string formattedData = BitConverter.ToString(buffer, 0, received).Replace("-", ",");
-                        Console.WriteLine($"Received from client: {formattedData}");
+                        Debug.WriteLine($"Received from client: {formattedData}");
                     }
 
                     // Client disconnected
@@ -77,7 +78,7 @@ namespace Mirror_MIDI
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Client error: {ex.Message}");
+                Debug.WriteLine($"Client error: {ex.Message}");
                 onClientDisconnected?.Invoke();
             }
         }

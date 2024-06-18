@@ -7,6 +7,7 @@ import mido
 import time
 from collections import deque
 
+
 def cc_to_nrpn(cc_number, data_value, input_channel, channel_map, cc_to_nrpn_map):
     # Validate data_value is within the MIDI range of 0-127
     if not (0 <= data_value <= 127):
@@ -219,6 +220,23 @@ def get_conversion_function(config1, config2):
     else:
         return cc_to_nrpn, nrpn_to_cc
 
+def listen_to_stdin(input_queue):
+    """
+    Listens for input from stdin and enqueues it for processing.
+
+    Args:
+        input_queue (queue.Queue): A thread-safe queue for passing input to the main thread.
+    """
+    try:
+        while True:
+            if not input_queue.empty():
+                data = input_queue.get()
+                print(f"Received update: {data}")
+            else:
+                time.sleep(0.1)  # Sleep for 100 milliseconds
+    except KeyboardInterrupt:
+        print("Exiting...")
+    
 def main():
     if len(sys.argv) != 5:
         print("Usage: MIDI_mirror.py <device1> <device2> <dhd_enabled> <dhd_device>")
@@ -228,10 +246,10 @@ def main():
     device2 = sys.argv[2]
     dhd_enabled = sys.argv[3] == 'True'
     dhd_device = sys.argv[4]
-
+    
     device1_config = read_xml_config(f"{device1}.xml")
     device2_config = read_xml_config(f"{device2}.xml")
-
+    
     if device1_config is None or device2_config is None:
         print("Error: Unable to read configuration files.")
         sys.exit(1)
@@ -260,23 +278,14 @@ def main():
 
     convert_func1, convert_func2 = get_conversion_function(device1_config, device2_config)
 
-    if dhd_enabled:
+    if dhd_enabled:       
         input_queue = queue.Queue()
         stdin_listener_thread = threading.Thread(target=listen_to_stdin, args=(input_queue,))
         stdin_listener_thread.daemon = True
         stdin_listener_thread.start()
 
-        print("DHD is enabled. Listening for updates...")
-
-        try:
-            while True:
-                if not input_queue.empty():
-                    data = input_queue.get()
-                    print(f"Received update: {data}")
-                pass
-        except KeyboardInterrupt:
-            print("Exiting...")
-
+        print("DHD is enabled. Listening for updates...")        
+        
     else:
         print("DHD is not enabled. Proceeding without listening for updates.")
 

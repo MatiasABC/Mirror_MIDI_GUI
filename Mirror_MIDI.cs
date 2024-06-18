@@ -64,12 +64,13 @@ namespace Mirror_MIDI
                     MessageBox.Show("DHD device must be selected when DHD is enabled.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-
+/*
                 if (DHD_Status.Text != " Connected")
                 {
                     MessageBox.Show("Please wait for DHD connection to be established.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
+*/
             }
 
             Device1.Enabled = false;
@@ -80,17 +81,12 @@ namespace Mirror_MIDI
 
             string dhdEnabled = DHD_Enabled.Checked ? "True" : "False";
             string dhdDeviceSelection = DHD_Device.SelectedItem?.ToString() ?? "None";
-
             StartPythonScript(Device1.SelectedItem.ToString(), Device2.SelectedItem.ToString(), dhdEnabled, dhdDeviceSelection);
         }
 
         private void Stop_Click(object sender, EventArgs e)
         {
-            if (dhdServer != null)
-            {
-                dhdServer.Stop();
-                dhdServer = null;
-            }
+
             StopPythonScript();
 
             Device1.Enabled = true;
@@ -117,7 +113,9 @@ namespace Mirror_MIDI
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                RedirectStandardInput = true,
                 CreateNoWindow = true
+
             };
 
             pythonProcess = new Process { StartInfo = startInfo };
@@ -138,7 +136,7 @@ namespace Mirror_MIDI
                     {
                         FileName = "cmd.exe",
                         Arguments = $"/c taskkill /F /T /PID {pythonProcess.Id}",
-                        UseShellExecute = false,
+                        UseShellExecute = true,
                         RedirectStandardOutput = false,
                         RedirectStandardError = false,
                         CreateNoWindow = true
@@ -202,30 +200,27 @@ namespace Mirror_MIDI
                     dhdServer.Start();
                 }
             }
-            else
-            {
-                if (dhdServer != null)
-                {
-                    dhdServer.Stop();
-                    dhdServer = null;
-                }
-                DHD_Status.Text = "";
-                DHD_Status.BackColor = SystemColors.Window;
-            }
+
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             StopPythonScript();
         }
-
+        private void SendMessageToPythonScript(string message)
+        {
+            if (pythonProcess != null && !pythonProcess.HasExited)
+            {
+                pythonProcess.StandardInput.WriteLine(message);
+            }
+        }
         private void PythonProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
             if (!string.IsNullOrEmpty(e.Data))
             {
                 this.Invoke(new Action(() =>
                 {
-                    MessageBox.Show(e.Data, "Python Output", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    Debug.WriteLine(e.Data, "Python Output", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }));
             }
         }
@@ -236,7 +231,7 @@ namespace Mirror_MIDI
             {
                 this.Invoke(new Action(() =>
                 {
-                    MessageBox.Show(e.Data, "Python Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Debug.WriteLine(e.Data, "Python Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }));
             }
         }
