@@ -18,6 +18,9 @@ namespace Mirror_MIDI
 
             // Add the FormClosing event handler
             this.FormClosing += new FormClosingEventHandler(Form1_FormClosing);
+
+            
+
         }
 
         private void PopulateDeviceLists()
@@ -124,6 +127,7 @@ namespace Mirror_MIDI
             pythonProcess.Start();
             pythonProcess.BeginOutputReadLine();
             pythonProcess.BeginErrorReadLine();
+            
         }
 
         private void StopPythonScript()
@@ -192,13 +196,17 @@ namespace Mirror_MIDI
             DHD_Status.Visible = isChecked;
             DHD_Device.Visible = isChecked;
 
+            // Ensure the server is only created once and controlled based on checkbox state
+            if (dhdServer == null)
+            {
+                // Initialize the server with event handlers that can send messages to the Python script
+                dhdServer = new DHDServer(OnClientConnected, OnClientDisconnected, SendMessageToPythonScript);
+
+            }
+
             if (isChecked)
             {
-                if (dhdServer == null)
-                {
-                    dhdServer = new DHDServer(OnClientConnected, OnClientDisconnected);
-                    dhdServer.Start();
-                }
+                dhdServer.Start();
             }
 
         }
@@ -212,6 +220,8 @@ namespace Mirror_MIDI
             if (pythonProcess != null && !pythonProcess.HasExited)
             {
                 pythonProcess.StandardInput.WriteLine(message);
+                pythonProcess.StandardInput.Flush();
+
             }
         }
         private void PythonProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)

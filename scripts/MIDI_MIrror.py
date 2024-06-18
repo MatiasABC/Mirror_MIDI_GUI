@@ -220,22 +220,25 @@ def get_conversion_function(config1, config2):
     else:
         return cc_to_nrpn, nrpn_to_cc
 
-def listen_to_stdin(input_queue):
+def listen_to_stdin():
     """
-    Listens for input from stdin and enqueues it for processing.
+    Listens for input from stdin and processes it.
+    """
+    print("Ready to receive data from C#...")
+    sys.stdout.flush()
 
-    Args:
-        input_queue (queue.Queue): A thread-safe queue for passing input to the main thread.
-    """
     try:
-        while True:
-            if not input_queue.empty():
-                data = input_queue.get()
-                print(f"Received update: {data}")
+        sys.stdout.flush()
+        for line in sys.stdin:
+            if line.strip():  # Only process non-empty lines
+                print(f"Received from C#: {line.strip()}")
+                sys.stdout.flush()
             else:
-                time.sleep(0.1)  # Sleep for 100 milliseconds
-    except KeyboardInterrupt:
-        print("Exiting...")
+                print("Received an empty line")
+                sys.stdout.flush()
+    except Exception as e:
+        print(f"Exception: {e}")
+        sys.stdout.flush()
     
 def main():
     if len(sys.argv) != 5:
@@ -279,10 +282,8 @@ def main():
     convert_func1, convert_func2 = get_conversion_function(device1_config, device2_config)
 
     if dhd_enabled:       
-        input_queue = queue.Queue()
-        stdin_listener_thread = threading.Thread(target=listen_to_stdin, args=(input_queue,))
-        stdin_listener_thread.daemon = True
-        stdin_listener_thread.start()
+        stdin_thread = threading.Thread(target=listen_to_stdin)
+        stdin_thread.start()
 
         print("DHD is enabled. Listening for updates...")        
         

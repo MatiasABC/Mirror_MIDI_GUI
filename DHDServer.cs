@@ -15,11 +15,12 @@ namespace Mirror_MIDI
         private bool isRunning;
         private Action onClientConnected;
         private Action onClientDisconnected;
-
-        public DHDServer(Action onClientConnected, Action onClientDisconnected)
+        private Action<string> onDataReceived;
+        public DHDServer(Action onClientConnected, Action onClientDisconnected, Action<string> onDataReceived)
         {
             this.onClientConnected = onClientConnected;
             this.onClientDisconnected = onClientDisconnected;
+            this.onDataReceived = onDataReceived;
         }
 
         public void Start()
@@ -66,13 +67,13 @@ namespace Mirror_MIDI
                     byte[] buffer = new byte[1024];
                     int received;
 
-                    while (isRunning && (received = clientSocket.Receive(buffer, SocketFlags.None)) > 0)
+                    while ((received = clientSocket.Receive(buffer)) > 0)
                     {
                         string formattedData = BitConverter.ToString(buffer, 0, received).Replace("-", ",");
-                        Debug.WriteLine($"Received from client: {formattedData}");
+                        //Debug.WriteLine($"Received from client: {formattedData}");
+                        onDataReceived?.Invoke(formattedData);
                     }
 
-                    // Client disconnected
                     onClientDisconnected?.Invoke();
                 }
             }
