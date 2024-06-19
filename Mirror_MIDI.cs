@@ -230,7 +230,7 @@ namespace Mirror_MIDI
             {
                 this.Invoke(new Action(() =>
                 {
-                    Debug.WriteLine(e.Data, "Python Output", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    Debug.WriteLine(e.Data, "Python Output");
                 }));
             }
         }

@@ -174,14 +174,45 @@ def parse_config(xml_root):
         config['faders'][fader_id] = fader_config
         #print(f"Fader {fader_id}: {fader_config}")
 
+    # Parsing fader buttons with toggle functionality
     for button in xml_root.findall('./fader_buttons/fader_button'):
         button_id = int(button.get('id'))
+        button_type = button.get('type')
+        button_value = int(button.get('value'))
+
         button_config = {
-            'type': button.get('type'),
-            'value': int(button.get('value')),
+            'type': button_type,
+            'value': button_value,
+            'toggle_on': [],
+            'toggle_off': []
         }
+
+        # Handle toggle on steps
+        toggle_on_steps = button.find('toggle_on')
+        if toggle_on_steps is not None:
+            for step in toggle_on_steps.findall('step'):
+                step_config = {
+                    'type': step.get('type'),
+                    'note': int(step.get('note')),
+                    'velocity': int(step.get('velocity'))
+                }
+                button_config['toggle_on'].append(step_config)
+            print(f"Button {button_id} toggle on: {button_config['toggle_on']}")  # Debugging print for toggle on
+
+        # Handle toggle off steps
+        toggle_off_steps = button.find('toggle_off')
+        if toggle_off_steps is not None:
+            for step in toggle_off_steps.findall('step'):
+                step_config = {
+                    'type': step.get('type'),
+                    'note': int(step.get('note')),
+                    'velocity': int(step.get('velocity'))
+                }
+                button_config['toggle_off'].append(step_config)
+            print(f"Button {button_id} toggle off: {button_config['toggle_off']}")  # Debugging print for toggle off
+
         config['fader_buttons'][button_id] = button_config
-        #print(f"Button {button_id}: {button_config}")
+        print(f"Button {button_id}: {button_config}")  # Debugging print for button overall config
 
     return config
 
