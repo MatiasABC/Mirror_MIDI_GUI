@@ -11,10 +11,13 @@
 		<fader id="4" type="NRPN" value="4503"/>
 		<fader id="5" type="NRPN" value="4631"/>
 		<fader id="6" type="NRPN" value="4759"/>
+		<fader id="7" type="NRPN" value="4887"/>
+		<fader id="8" type="NRPN" value="5015"/>
+		
 	</faders>
 	<fader_buttons>
 		<fader_button id="1" type="toggle" value="32">
-			<toggle_on>note_on channel=1 note=32 velocity=127 time=0 AND note_off channel=1 note=32 velocity=0 time=0</toggle_on>
+			<toggle_on>note_on channel=1 note=32 velocity=127 time=0</toggle_on>
 			<toggle_off>note_on channel=1 note=32 velocity=63 time=0 AND note_off channel=1 note=32 velocity=0 time=0</toggle_off>
 		</fader_button>
 		<fader_button id="2" type="toggle" value="33">

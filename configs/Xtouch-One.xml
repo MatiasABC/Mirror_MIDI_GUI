@@ -11,6 +11,8 @@
 		<fader id="4" type="control_change" value="4"/>
 		<fader id="5" type="control_change" value="5"/>
 		<fader id="6" type="control_change" value="10"/>
+		<fader id="7" type="control_change" value="7"/>
+		<fader id="8" type="control_change" value="8"/>
 	</faders>
 	<fader_buttons>
 		<fader_button id="1" type="toggle" value="40">
