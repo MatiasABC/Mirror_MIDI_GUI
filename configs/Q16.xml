@@ -14,84 +14,36 @@
 	</faders>
 	<fader_buttons>
 		<fader_button id="1" type="toggle" value="32">
-			<toggle_on>
-				<step type="note_on" note="32" velocity="127"/>
-				<step type="note_off" note="32" velocity="0"/>
-			</toggle_on>
-			<toggle_off>
-				<step type="note_on" note="32" velocity="63"/>
-				<step type="note_off" note="32" velocity="0"/>
-			</toggle_off>
+			<toggle_on>note_on channel=1 note=32 velocity=127 time=0 AND note_off channel=1 note=32 velocity=0 time=0</toggle_on>
+			<toggle_off>note_on channel=1 note=32 velocity=63 time=0 AND note_off channel=1 note=32 velocity=0 time=0</toggle_off>
 		</fader_button>
 		<fader_button id="2" type="toggle" value="33">
-			<toggle_on>
-				<step type="note_on" note="33" velocity="127"/>
-				<step type="note_off" note="33" velocity="0"/>
-			</toggle_on>
-			<toggle_off>
-				<step type="note_on" note="33" velocity="63"/>
-				<step type="note_off" note="33" velocity="0"/>
-			</toggle_off>
+			<toggle_on>note_on channel=1 note=33 velocity=127 time=0 AND note_off channel=1 note=33 velocity=0 time=0</toggle_on>
+			<toggle_off>note_on channel=1 note=33 velocity=63 time=0 AND note_off channel=1 note=33 velocity=0 time=0</toggle_off>
 		</fader_button>
 		<fader_button id="3" type="toggle" value="34">
-			<toggle_on>
-				<step type="note_on" note="34" velocity="127"/>
-				<step type="note_off" note="34" velocity="0"/>
-			</toggle_on>
-			<toggle_off>
-				<step type="note_on" note="34" velocity="63"/>
-				<step type="note_off" note="34" velocity="0"/>
-			</toggle_off>
+			<toggle_on>note_on channel=1 note=34 velocity=127 time=0 AND note_off channel=1 note=34 velocity=0 time=0</toggle_on>
+			<toggle_off>note_on channel=1 note=34 velocity=63 time=0 AND note_off channel=1 note=34 velocity=0 time=0</toggle_off>
 		</fader_button>
 		<fader_button id="4" type="toggle" value="35">
-			<toggle_on>
-				<step type="note_on" note="35" velocity="127"/>
-				<step type="note_off" note="35" velocity="0"/>
-			</toggle_on>
-			<toggle_off>
-				<step type="note_on" note="35" velocity="63"/>
-				<step type="note_off" note="35" velocity="0"/>
-			</toggle_off>
+			<toggle_on>note_on channel=1 note=35 velocity=127 time=0 AND note_off channel=1 note=35 velocity=0 time=0</toggle_on>
+			<toggle_off>note_on channel=1 note=35 velocity=63 time=0 AND note_off channel=1 note=35 velocity=0 time=0</toggle_off>
 		</fader_button>
 		<fader_button id="5" type="toggle" value="36">
-			<toggle_on>
-				<step type="note_on" note="36" velocity="127"/>
-				<step type="note_off" note="36" velocity="0"/>
-			</toggle_on>
-			<toggle_off>
-				<step type="note_on" note="36" velocity="63"/>
-				<step type="note_off" note="36" velocity="0"/>
-			</toggle_off>
+			<toggle_on>note_on channel=1 note=36 velocity=127 time=0 AND note_off channel=1 note=36 velocity=0 time=0</toggle_on>
+			<toggle_off>note_on channel=1 note=36 velocity=63 time=0 AND note_off channel=1 note=36 velocity=0 time=0</toggle_off>
 		</fader_button>
 		<fader_button id="6" type="toggle" value="37">
-			<toggle_on>
-				<step type="note_on" note="37" velocity="127"/>
-				<step type="note_off" note="37" velocity="0"/>
-			</toggle_on>
-			<toggle_off>
-				<step type="note_on" note="37" velocity="63"/>
-				<step type="note_off" note="37" velocity="0"/>
-			</toggle_off>
+			<toggle_on>note_on channel=1 note=37 velocity=127 time=0 AND note_off channel=1 note=37 velocity=0 time=0</toggle_on>
+			<toggle_off>note_on channel=1 note=37 velocity=63 time=0 AND note_off channel=1 note=37 velocity=0 time=0</toggle_off>
 		</fader_button>
 		<fader_button id="7" type="toggle" value="38">
-			<toggle_on>
-				<step type="note_on" note="38" velocity="127"/>
-				<step type="note_off" note="38" velocity="0"/>
-			</toggle_on>
-			<toggle_off>
-				<step type="note_on" note="38" velocity="63"/>
-				<step type="note_off" note="38" velocity="0"/>
-			</toggle_off>
+			<toggle_on>note_on channel=1 note=38 velocity=127 time=0 AND note_off channel=1 note=38 velocity=0 time=0</toggle_on>
+			<toggle_off>note_on channel=1 note=38 velocity=63 time=0 AND note_off channel=1 note=38 velocity=0 time=0</toggle_off>
 		</fader_button>
 		<fader_button id="8" type="toggle" value="39">
-			<toggle_on>
-				<step type="note_on" note="39" velocity="127"/>
-				<step type="note_off" note="39" velocity="0"/>
-			</toggle_on>
-			<toggle_off>
-				<step type="note_on" note="39" velocity="63"/>
-				<step type="note_off" note="39" velocity="0"/>
-			</toggle_off>
+			<toggle_on>note_on channel=1 note=39 velocity=127 time=0 AND note_off channel=1 note=39 velocity=0 time=0</toggle_on>
+			<toggle_off>note_on channel=1 note=39 velocity=63 time=0 AND note_off channel=1 note=39 velocity=0 time=0</toggle_off>
 		</fader_button>
 	</fader_buttons>
 </configuration>

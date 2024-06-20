@@ -114,10 +114,10 @@ namespace Mirror_MIDI
                 FileName = "python",
                 Arguments = $"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\"",
                 UseShellExecute = false,
-                RedirectStandardOutput = true,
+                RedirectStandardOutput = false,
                 RedirectStandardError = true,
                 RedirectStandardInput = true,
-                CreateNoWindow = true
+                CreateNoWindow = false
 
             };
 
@@ -125,7 +125,7 @@ namespace Mirror_MIDI
             pythonProcess.OutputDataReceived += PythonProcess_OutputDataReceived;
             pythonProcess.ErrorDataReceived += PythonProcess_ErrorDataReceived;
             pythonProcess.Start();
-            pythonProcess.BeginOutputReadLine();
+            //pythonProcess.BeginOutputReadLine();
             pythonProcess.BeginErrorReadLine();
             
         }
@@ -241,7 +241,7 @@ namespace Mirror_MIDI
             {
                 this.Invoke(new Action(() =>
                 {
-                    Debug.WriteLine(e.Data, "Python Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Debug.WriteLine(e.Data, "Python Error");
                 }));
             }
         }
