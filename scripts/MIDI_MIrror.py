@@ -2,11 +2,36 @@ import sys
 import threading
 import xml.etree.ElementTree as ET
 import os
+from altair import Type
 import mido
 import time
 from collections import deque
+from queue import Queue
+from pynput.keyboard import Key, Controller
 
+gpio_to_fader_button_map = {
+    "2A00": (1, 'toggle_off'),
+    "2A01": (1, 'toggle_on'),
+    "2B00": (2, 'toggle_off'),
+    "2B01": (2, 'toggle_on'),
+    "2C00": (3, 'toggle_off'),
+    "2C01": (3, 'toggle_on'),
+    "2D00": (4, 'toggle_off'),
+    "2D01": (4, 'toggle_on'),
+    "2E00": (5, 'toggle_off'),
+    "2E01": (5, 'toggle_on')
+}
 
+keyboard = Controller()
+
+#TODO: make this dynamic to work through faders 1-4, add an input for the fader number
+def trigger_key_press():
+    with keyboard.pressed(Key.ctrl):
+        with keyboard.pressed(Key.alt):
+            keyboard.press(Key.f12)
+            keyboard.release(Key.f12)
+    print("Triggered key press: Ctrl+Alt+F12")
+    
 def cc_to_nrpn(cc_number, data_value, input_channel, channel_map, cc_to_nrpn_map):
     if not (0 <= data_value <= 127):
         raise ValueError("data_value must be between 0 and 127")
@@ -24,7 +49,6 @@ def cc_to_nrpn(cc_number, data_value, input_channel, channel_map, cc_to_nrpn_map
             mido.Message('control_change', control=38, value=0, channel=output_channel)
         ]
     else:
-        #print(f"No mapping found for CC {cc_number}")
         pass
     return None
 
@@ -60,13 +84,9 @@ def nrpn_to_cc(nrpn_number, data_value, input_channel, channel_map, nrpn_to_cc_m
             return mido.Message('control_change', control=cc_number, value=scaled_data_value, channel=output_channel)
         elif time_elapsed < min_interval:
             return None
-    else:
-        #print(f"No mapping found for NRPN {nrpn_number}")
-        pass
-
     return None
 
-
+#TODO: add functions to convert CC to CC and NRPN to NRPN
 def is_nrpn_control(control):
     return control in [98, 99, 6, 38]
 
@@ -95,10 +115,6 @@ def get_message_str(message):
     return f"{message.type} channel={message.channel} note={message.note} velocity={message.velocity} time=0"
 
 def get_note_from_step(step_str):
-    """
-    Extracts the note value from a step string.
-    Example: 'note_on channel=1 note=32 velocity=127 time=0' -> 32
-    """
     for part in step_str.split():
         if part.startswith('note='):
             return int(part.split('=')[1])
@@ -109,16 +125,25 @@ def send_mapped_message(outport, step, originating_device, message_type):
     velocity = int(step[originating_device].split('velocity=')[1].split()[0])
     channel = int(step[originating_device].split('channel=')[1].split()[0])
     mapped_message = mido.Message(message_type, note=note, velocity=velocity, channel=channel)
-    #print(f"Sending mapped message: {mapped_message}")
+    print(f"Sending mapped message: {mapped_message}")
     outport.send(mapped_message)
 
-def mirror_midi(input_device_name, output_device_name, channel_map, cc_to_nrpn_map, nrpn_to_cc_map, button_map, step_map, DHD_enabled, delay=0.001):
+def mirror_midi(input_device_name, output_device_name, channel_map, cc_to_nrpn_map, nrpn_to_cc_map, button_map, step_map, DHD_enabled, stdin_queue, delay=0.001):
     message_queue = deque()
     last_send_time = time.time()
     nrpn_cache = {}
     message_buffer = {}
     buffer_timeout = 0.1
-
+    
+    #TODO: change function to define what buttons from config will trigger the key combination
+    def handle_special_message(message):
+        # Define the specific messages that should trigger the key combination
+        special_messages = [
+            mido.Message('note_on', channel=0, note=40, velocity=127, time=0),
+            mido.Message('note_off', channel=0, note=40, velocity=0, time=0)
+        ]
+        return message in special_messages
+    
     def send_messages():
         nonlocal last_send_time
         while message_queue:
@@ -128,155 +153,148 @@ def mirror_midi(input_device_name, output_device_name, channel_map, cc_to_nrpn_m
 
     with mido.open_input(input_device_name) as inport, mido.open_output(output_device_name) as outport:
         print(f"Mirroring MIDI from {input_device_name} to {output_device_name}...")
-        for message in inport:
-            now = time.time()
-            if now - last_send_time > delay:
-                send_messages()
+        while True:
+            #TODO: remove the hardcoded port name
+            while DHD_enabled and not stdin_queue.empty() and str(outport) == """<open output 'X-TOUCH COMPACT 2' (RtMidi/WINDOWS_MM)>""":
+                step, originating_device = stdin_queue.get()
+                send_gpio_mapped_message(outport, step, originating_device)
 
-            if message.type == 'control_change':
-                if is_nrpn_control(message.control):
-                    result = process_nrpn_messages(nrpn_cache, message)
-                    if result:
-                        nrpn_number, data_value = result
-                        transformed_message = nrpn_to_cc(nrpn_number, data_value, message.channel, channel_map, nrpn_to_cc_map)
-                        if transformed_message:
-                            message_queue.append(transformed_message)
-                    continue
-                transformed_message = cc_to_nrpn(message.control, message.value, message.channel, channel_map, cc_to_nrpn_map)
-                if transformed_message:
-                    for msg in transformed_message:
-                        message_queue.append(msg)
-                    continue
+            for message in inport.iter_pending():
+                now = time.time()
+                if now - last_send_time > delay:
+                    send_messages()
+                if handle_special_message(message) and DHD_enabled:
+                        print(f"Special MIDI message received: {message}. Sending key combination Ctrl+Alt+F12")
+                        trigger_key_press()
+                        continue  # Skip further processing for this message
+                if message.type == 'control_change':
+                    if is_nrpn_control(message.control):
+                        result = process_nrpn_messages(nrpn_cache, message)
+                        if result:
+                            nrpn_number, data_value = result
+                            transformed_message = nrpn_to_cc(nrpn_number, data_value, message.channel, channel_map, nrpn_to_cc_map)
+                            if transformed_message:
+                                message_queue.append(transformed_message)
+                        continue
+                    transformed_message = cc_to_nrpn(message.control, message.value, message.channel, channel_map, cc_to_nrpn_map)
+                    if transformed_message:
+                        for msg in transformed_message:
+                            message_queue.append(msg)
+                        continue
 
-            if not DHD_enabled:
-                if message.type in ['note_on', 'note_off']:
-                    all_notes = {note for pair in button_map.keys() | button_map.values() for note in pair}
-                    if message.note in all_notes:
-                        # Find the corresponding button ID
-                        button_id = None
-                        for key, value in button_map.items():
-                            if message.note in key or message.note in value:
-                                button_id = key[0]
-                                break
-
-                        if button_id is not None:
-                            steps = step_map[button_id]
-
-                            # Check buffer for previous message
-                            if button_id in message_buffer and now - message_buffer[button_id]['timestamp'] <= buffer_timeout:
-                                buffered_message = message_buffer[button_id]['message']
-                                if (buffered_message.channel == message.channel and buffered_message.note == message.note):
-                                    combined_message_str = get_combined_message_str(buffered_message, message)
-                                    message_buffer.pop(button_id)
-
-                                    # Determine if the action is toggle_on or toggle_off by comparing the combined message with the steps
-                                    action = None
-                                    for step in steps['toggle_on']:
-                                        if combined_message_str == step['device1'] or combined_message_str == step['device2']:
-                                            action = 'toggle_on'
-                                            break
-
-                                    if action is None:
-                                        for step in steps['toggle_off']:
-                                            if combined_message_str == step['device1'] or combined_message_str == step['device2']:
-                                                action = 'toggle_off'
-                                                break
-
-                                    if action is not None:
-                                        # Determine which device sent the message
-                                        originating_device = None
-                                        for step in steps[action]:
-                                            if combined_message_str == step['device1']:
-                                                originating_device = 'device1'
-                                            elif combined_message_str == step['device2']:
-                                                originating_device = 'device2'
-
-
-                                        # Send the mapped messages for device2 (require one message)
-                                        if originating_device == 'device1':
-                                            for step in steps[action]:
-                                                send_mapped_message(outport, step, 'device2', 'note_on')
-                                        else:
-                                            # Send the mapped messages for device1 (require two messages)
-                                            for step in steps[action]:
-                                                send_mapped_message(outport, step, 'device1', 'note_on')
-                                                send_mapped_message(outport, step, 'device1', 'note_off')
-                                else:
-                                    # Process the buffered message as a standalone message
-                                    single_message_str = get_message_str(buffered_message)
-                                    action = None
-                                    for step in steps['toggle_on']:
-                                        if single_message_str == step['device1'] or single_message_str == step['device2']:
-                                            action = 'toggle_on'
-                                            break
-
-                                    if action is None:
-                                        for step in steps['toggle_off']:
-                                            if single_message_str == step['device1'] or single_message_str == step['device2']:
-                                                action = 'toggle_off'
-                                                break
-
-                                    if action is not None:
-                                        originating_device = None
-                                        for step in steps[action]:
-                                            if single_message_str == step['device1']:
-                                                originating_device = 'device1'
-                                            elif single_message_str == step['device2']:
-                                                originating_device = 'device2'
-
-
-                                        # Send the mapped messages for device2 (require one message)
-                                        if originating_device == 'device1':
-                                            for step in steps[action]:
-                                                send_mapped_message(outport, step, 'device2', 'note_on')
-                                        else:
-                                            # Send the mapped messages for device1 (require two messages)
-                                            for step in steps[action]:
-                                                send_mapped_message(outport, step, 'device1', 'note_on')
-                                                send_mapped_message(outport, step, 'device1', 'note_off')
-
-                                    # Add current message to buffer
-                                    message_buffer[button_id] = {'message': message, 'timestamp': now}
-                            else:
-                                # Add current message to buffer
-                                message_buffer[button_id] = {'message': message, 'timestamp': now}
-
-                            # Process single messages that don't require combining
-                            single_message_str = get_message_str(message)
-                            action = None
-                            for step in steps['toggle_on']:
-                                if single_message_str == step['device1'] or single_message_str == step['device2']:
-                                    action = 'toggle_on'
+                if not DHD_enabled:
+                    if message.type in ['note_on', 'note_off']:
+                        all_notes = {note for pair in button_map.keys() | button_map.values() for note in pair}
+                        if message.note in all_notes:
+                            button_id = None
+                            for key, value in button_map.items():
+                                if message.note in key or message.note in value:
+                                    button_id = key[0]
                                     break
 
-                            if action is None:
-                                for step in steps['toggle_off']:
+                            if button_id is not None:
+                                steps = step_map[button_id]
+                                
+                                #TODO: simplify this logic
+                                if button_id in message_buffer and now - message_buffer[button_id]['timestamp'] <= buffer_timeout:
+                                    buffered_message = message_buffer[button_id]['message']
+                                    if (buffered_message.channel == message.channel and buffered_message.note == message.note):
+                                        combined_message_str = get_combined_message_str(buffered_message, message)
+                                        message_buffer.pop(button_id)
+
+                                        action = None
+                                        for step in steps['toggle_on']:
+                                            if combined_message_str == step['device1'] or combined_message_str == step['device2']:
+                                                action = 'toggle_on'
+                                                break
+
+                                        if action is None:
+                                            for step in steps['toggle_off']:
+                                                if combined_message_str == step['device1'] or combined_message_str == step['device2']:
+                                                    action = 'toggle_off'
+                                                    break
+
+                                        if action is not None:
+                                            originating_device = None
+                                            for step in steps[action]:
+                                                if combined_message_str == step['device1']:
+                                                    originating_device = 'device1'
+                                                elif combined_message_str == step['device2']:
+                                                    originating_device = 'device2'
+
+                                            if originating_device == 'device1':
+                                                for step in steps[action]:
+                                                    send_mapped_message(outport, step, 'device2', 'note_on')
+                                            else:
+                                                for step in steps[action]:
+                                                    send_mapped_message(outport, step, 'device1', 'note_on')
+                                                    send_mapped_message(outport, step, 'device1', 'note_off')
+                                    else:
+                                        single_message_str = get_message_str(buffered_message)
+                                        action = None
+                                        for step in steps['toggle_on']:
+                                            if single_message_str == step['device1'] or single_message_str == step['device2']:
+                                                action = 'toggle_on'
+                                                break
+
+                                        if action is None:
+                                            for step in steps['toggle_off']:
+                                                if single_message_str == step['device1'] or single_message_str == step['device2']:
+                                                    action = 'toggle_off'
+                                                    break
+
+                                        if action is not None:
+                                            originating_device = None
+                                            for step in steps[action]:
+                                                if single_message_str == step['device1']:
+                                                    originating_device = 'device1'
+                                                elif single_message_str == step['device2']:
+                                                    originating_device = 'device2'
+
+                                            if originating_device == 'device1':
+                                                for step in steps[action]:
+                                                    send_mapped_message(outport, step, 'device2', message.type)
+                                            else:
+                                                for step in steps[action]:
+                                                    send_mapped_message(outport, step, 'device1', 'note_on')
+                                                    send_mapped_message(outport, step, 'device1', 'note_off')
+
+                                        message_buffer[button_id] = {'message': message, 'timestamp': now}
+                                else:
+                                    message_buffer[button_id] = {'message': message, 'timestamp': now}
+
+                                single_message_str = get_message_str(message)
+                                action = None
+                                for step in steps['toggle_on']:
                                     if single_message_str == step['device1'] or single_message_str == step['device2']:
-                                        action = 'toggle_off'
+                                        action = 'toggle_on'
                                         break
 
-                            if action is not None:
-                                originating_device = None
-                                for step in steps[action]:
-                                    if single_message_str == step['device1']:
-                                        originating_device = 'device1'
-                                    elif single_message_str == step['device2']:
-                                        originating_device = 'device2'
+                                if action is None:
+                                    for step in steps['toggle_off']:
+                                        if single_message_str == step['device1'] or single_message_str == step['device2']:
+                                            action = 'toggle_off'
+                                            break
 
-                                # Send the mapped messages for device2 (require one message)
-                                if originating_device == 'device1':
+                                if action is not None:
+                                    originating_device = None
                                     for step in steps[action]:
-                                        send_mapped_message(outport, step, 'device2', message.type)
-                                else:
-                                    # Send the mapped messages for device1 (require two messages)
-                                    for step in steps[action]:
-                                        send_mapped_message(outport, step, 'device1', 'note_on')
-                                        send_mapped_message(outport, step, 'device1', 'note_off')
+                                        if single_message_str == step['device1']:
+                                            originating_device = 'device1'
+                                        elif single_message_str == step['device2']:
+                                            originating_device = 'device2'
+
+                                    if originating_device == 'device1':
+                                        for step in steps[action]:
+                                            send_mapped_message(outport, step, 'device2', message.type)
+                                    else:
+                                        for step in steps[action]:
+                                            send_mapped_message(outport, step, 'device1', 'note_on')
+                                            send_mapped_message(outport, step, 'device1', 'note_off')
+
+            time.sleep(delay)
 
     send_messages()
-
-
-
 
 def read_xml_config(file_name):
     configs_path = os.path.join(os.path.dirname(__file__), '..', 'configs', file_name)
@@ -292,7 +310,6 @@ def read_xml_config(file_name):
     except FileNotFoundError:
         print(f"XML file not found: {full_path}")
     return None
-
 
 def parse_config(xml_root):
     config = {
@@ -335,7 +352,6 @@ def parse_config(xml_root):
 
     return config
 
-
 def build_mappings(device1_config, device2_config):
     cc_to_nrpn_map = {}
     nrpn_to_cc_map = {}
@@ -351,7 +367,6 @@ def build_mappings(device1_config, device2_config):
                 cc_to_nrpn_map[fader['value']] = (device1_config['faders'][fader_id]['value'], device1_config['channel'])
 
     return nrpn_to_cc_map, cc_to_nrpn_map
-
 
 def build_toggle_mappings(device1_config, device2_config):
     fader_button_map = {}
@@ -383,8 +398,6 @@ def build_toggle_mappings(device1_config, device2_config):
 
     return fader_button_map, steps_button_map
 
-
-
 def get_conversion_function(config1, config2):
     if all(fader['type'] == 'NRPN' for fader in config1['faders'].values()) and \
        all(fader['type'] == 'NRPN' for fader in config2['faders'].values()):
@@ -395,24 +408,52 @@ def get_conversion_function(config1, config2):
     else:
         return cc_to_nrpn, nrpn_to_cc
 
+gpio_to_fader_button_map = {
+    "2A00": (1, 'toggle_on'),
+    "2A01": (1, 'toggle_off'),
+    "2B00": (2, 'toggle_on'),
+    "2B01": (2, 'toggle_off'),
+    "2C00": (3, 'toggle_on'),
+    "2C01": (3, 'toggle_off'),
+    "2D00": (4, 'toggle_on'),
+    "2D01": (4, 'toggle_off'),
+    "2E00": (5, 'toggle_on'),
+    "2E01": (5, 'toggle_off')
+}
 
-def listen_to_stdin():
+def send_gpio_mapped_message(outport, step, originating_device):
+    note = get_note_from_step(step[originating_device])
+    velocity = int(step[originating_device].split('velocity=')[1].split()[0])
+    channel = int(step[originating_device].split('channel=')[1].split()[0])
+    message_type = step[originating_device].split()[0]
+    mapped_message = mido.Message(message_type, note=note, velocity=velocity, channel=channel)
+    print(f"Sending mapped message: {mapped_message}")
+    outport.send(mapped_message)
+
+def listen_to_stdin(dhd_device_config, step_map, stdin_queue, dhd_device = "device2"):
     print("Ready to receive data from C#...")
     sys.stdout.flush()
 
     try:
-        sys.stdout.flush()
         for line in sys.stdin:
             if line.strip():
                 print(f"Received from C#: {line.strip()}")
                 sys.stdout.flush()
+
+                hex_action = line.strip()
+                if hex_action in gpio_to_fader_button_map:
+                    button_id, action = gpio_to_fader_button_map[hex_action]
+                    steps = step_map[button_id]                    
+                    for step in steps[action]:
+                        stdin_queue.put((step, dhd_device))                    
+                else:
+                    print(f"Unknown or malformed action received: {line.strip()}")
             else:
                 print("Received an empty line")
                 sys.stdout.flush()
     except Exception as e:
         print(f"Exception: {e}")
         sys.stdout.flush()
-
 
 def main():
     if len(sys.argv) != 5:
@@ -426,13 +467,25 @@ def main():
     
     device1_config = read_xml_config(f"{device1}.xml")
     device2_config = read_xml_config(f"{device2}.xml")
-    
+
     if device1_config is None or device2_config is None:
         print("Error: Unable to read configuration files.")
         sys.exit(1)
 
     device1_config = parse_config(device1_config)
     device2_config = parse_config(device2_config)
+
+    if dhd_device:
+        if dhd_device == device1:
+            dhd_config = device1_config
+        elif dhd_device == device2:
+            dhd_config = device2_config
+        else:
+            dhd_config = read_xml_config(f"{dhd_device}.xml")
+            if dhd_config is None:
+                print(f"Error: Unable to read DHD device configuration file '{dhd_device}.xml'.")
+                sys.exit(1)
+            dhd_config = parse_config(dhd_config)
 
     available_inputs = mido.get_input_names()
     available_outputs = mido.get_output_names()
@@ -455,22 +508,21 @@ def main():
 
     convert_func1, convert_func2 = get_conversion_function(device1_config, device2_config)
 
-    if dhd_enabled:       
-        stdin_thread = threading.Thread(target=listen_to_stdin)
+    stdin_queue = Queue()
+
+    if dhd_enabled:
+        stdin_thread = threading.Thread(target=listen_to_stdin, args=(dhd_config, step_map, stdin_queue))
         stdin_thread.start()
 
-        print("DHD is enabled. Listening for updates...")        
-        
-    else:        
-        print("DHD is not enabled. Proceeding without listening for updates.")
+        print("DHD is enabled. Listening for updates...")
 
     threading.Thread(target=mirror_midi, args=(
         device1_config['midi_in_name'], device2_config['midi_out_name'], 
-        {device1_config['channel']: device2_config['channel']}, nrpn_to_cc_map, cc_to_nrpn_map, button_map, step_map,dhd_enabled)).start()
+        {device1_config['channel']: device2_config['channel']}, nrpn_to_cc_map, cc_to_nrpn_map, button_map, step_map, dhd_enabled, stdin_queue)).start()
     
     threading.Thread(target=mirror_midi, args=(
         device2_config['midi_in_name'], device1_config['midi_out_name'], 
-        {device2_config['channel']: device1_config['channel']}, nrpn_to_cc_map, cc_to_nrpn_map, button_map, step_map, dhd_enabled)).start()
+        {device2_config['channel']: device1_config['channel']}, nrpn_to_cc_map, cc_to_nrpn_map, button_map, step_map, dhd_enabled, stdin_queue)).start()
         
 if __name__ == "__main__":
     main()
