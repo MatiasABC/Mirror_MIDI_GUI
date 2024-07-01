@@ -44,7 +44,7 @@
             // 
             label1.AutoSize = true;
             label1.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            label1.Location = new Point(238, 12);
+            label1.Location = new Point(190, 13);
             label1.Name = "label1";
             label1.Size = new Size(78, 31);
             label1.TabIndex = 1;
@@ -52,7 +52,7 @@
             // 
             // Start
             // 
-            Start.Location = new Point(576, 12);
+            Start.Location = new Point(452, 10);
             Start.Name = "Start";
             Start.Size = new Size(94, 35);
             Start.TabIndex = 3;
@@ -62,7 +62,7 @@
             // 
             // Stop
             // 
-            Stop.Location = new Point(576, 53);
+            Stop.Location = new Point(452, 51);
             Stop.Name = "Stop";
             Stop.Size = new Size(94, 35);
             Stop.TabIndex = 4;
@@ -74,11 +74,11 @@
             // 
             label2.AutoSize = true;
             label2.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            label2.Location = new Point(12, 57);
+            label2.Location = new Point(12, 55);
             label2.Name = "label2";
-            label2.Size = new Size(62, 31);
+            label2.Size = new Size(138, 31);
             label2.TabIndex = 5;
-            label2.Text = "DHD";
+            label2.Text = "Radio Assist";
             // 
             // DHD_Status
             // 
@@ -86,7 +86,7 @@
             DHD_Status.BorderStyle = BorderStyle.FixedSingle;
             DHD_Status.Enabled = false;
             DHD_Status.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            DHD_Status.Location = new Point(274, 55);
+            DHD_Status.Location = new Point(12, 139);
             DHD_Status.Name = "DHD_Status";
             DHD_Status.ReadOnly = true;
             DHD_Status.Size = new Size(172, 38);
@@ -99,7 +99,7 @@
             Device1.AllowDrop = true;
             Device1.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
             Device1.FormattingEnabled = true;
-            Device1.Location = new Point(60, 10);
+            Device1.Location = new Point(12, 10);
             Device1.Name = "Device1";
             Device1.Size = new Size(172, 39);
             Device1.TabIndex = 7;
@@ -109,7 +109,7 @@
             Device2.AllowDrop = true;
             Device2.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
             Device2.FormattingEnabled = true;
-            Device2.Location = new Point(322, 9);
+            Device2.Location = new Point(274, 10);
             Device2.Name = "Device2";
             Device2.Size = new Size(172, 39);
             Device2.TabIndex = 8;
@@ -117,7 +117,7 @@
             // DHD_Enabled
             // 
             DHD_Enabled.AutoSize = true;
-            DHD_Enabled.Location = new Point(76, 67);
+            DHD_Enabled.Location = new Point(156, 67);
             DHD_Enabled.Name = "DHD_Enabled";
             DHD_Enabled.Size = new Size(18, 17);
             DHD_Enabled.TabIndex = 9;
@@ -129,7 +129,7 @@
             DHD_Device.AllowDrop = true;
             DHD_Device.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
             DHD_Device.FormattingEnabled = true;
-            DHD_Device.Location = new Point(100, 55);
+            DHD_Device.Location = new Point(12, 94);
             DHD_Device.Name = "DHD_Device";
             DHD_Device.Size = new Size(172, 39);
             DHD_Device.TabIndex = 10;
@@ -140,7 +140,7 @@
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.AppWorkspace;
-            ClientSize = new Size(682, 127);
+            ClientSize = new Size(570, 194);
             Controls.Add(DHD_Device);
             Controls.Add(DHD_Enabled);
             Controls.Add(Device2);
