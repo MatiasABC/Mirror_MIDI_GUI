@@ -350,7 +350,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                         for opposite_step in step_map[button_id][action]:
                                             for step_msg in opposite_step[opposite_device].split(" AND "):
                                                 message_queue.append(mido.Message.from_str(step_msg))   
-                                                print(step_msg)
+                                                
                                         message_buffer.clear()
                                         pass
 
@@ -367,7 +367,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                     for mirrored_step in step_map[button_id][action]:
                                         for step_msg in mirrored_step[opposite_device].split(" AND "):
                                             message_queue.append(mido.Message.from_str(step_msg))
-                                            print(step_msg)
+                                            
                                     message_buffer.clear()
                                     pass
 
