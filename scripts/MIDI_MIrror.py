@@ -26,20 +26,30 @@ gpio_to_fader_button_map = {
 keyboard = Controller()
 
 def trigger_key_press_id(id):
-    Toggle_Key_presses = [[Key.ctrl,Key.alt, Key.f1],[Key.ctrl,Key.alt, Key.f2],[Key.ctrl,Key.alt, Key.f3],[Key.ctrl,Key.alt, Key.f4]]
+    Toggle_Key_presses = [
+        [Key.ctrl, Key.alt, Key.f1],
+        [Key.ctrl, Key.alt, Key.f2],
+        [Key.ctrl, Key.alt, Key.f3],
+        [Key.ctrl, Key.alt, Key.f4]
+    ]
+    keyboard = Controller()
     # Ensure the ID is within the valid range
     if 0 <= id < len(Toggle_Key_presses):
-        key_combination = Toggle_Key_presses[id]
+        key_combination = Toggle_Key_presses[id-1]
         
+        print(f"Triggering key press combination for ID {id}: {key_combination}")
+
         # Press each key in the combination
         for key in key_combination:
+            print(f"Pressing {key}")
             keyboard.press(key)
         
         # Release each key in the combination
-        for key in key_combination:
+        for key in key_combination:            
             keyboard.release(key)
     else:
         print("Invalid ID. Please provide a valid ID between 0 and", len(Toggle_Key_presses) - 1)
+
 
 
 
@@ -261,36 +271,31 @@ def process_nrpn_messages(nrpn_cache, message):
     return None
 
 
-def mirror_midi(device, input_device_name, output_device_name, channel_map,cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, DHD_enabled, stdin_queue ,Radio_Assist_Faders_Location, convert_func,dhd_device, delay=0.0001):
+def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, DHD_enabled, stdin_queue, Radio_Assist_Faders_Location, convert_func, dhd_device, delay=0.0001):
     message_queue = deque()
     last_send_time = time.time()
     nrpn_cache = {}
     message_buffer = []
     buffer_timeout = 0.1
-    
-    #TODO: change function to define what buttons from config will trigger the key combination
-    def handle_special_message(messages):       
-        if dhd_device == input_device_name:
-            pass
-        #check Radio_Assist_Faders_Location to see what buttons can trigger the key combination
-    
-        #make a list of all the messages that can be a special message. ACCOUNT FOR MESSAGES THAT CAN BE A COMBINATION OF MESSAGES      
-        
-        #check if message is a special message, get the unique id of the button
-    
-        
-        # return button id of message, return empty if not a special button
-                
+
+    def handle_special_message(button_id):
+        # Check if the message is a special message that can trigger a key combination
+        for Cart_Stack_number, allocated_button in Radio_Assist_Faders_Location.items():
+            if allocated_button == button_id:
+                print(f"Special message detected for button {button_id}")                
+                return Cart_Stack_number
+        return None
+
     def send_messages():
         nonlocal last_send_time
         while message_queue:
             msg = message_queue.popleft()
             outport.send(msg)
         last_send_time = time.time()
-        
+
     def midi_message_to_string(message):
         return str(message)
-    
+
     def check_step_map_sequence(buffer):
         # Convert the message buffer to a single string for comparison
         buffer_str = ' AND '.join(buffer)
@@ -300,19 +305,19 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map,cc_to
                     if step[device] == buffer_str:
                         return button_id, action, step[device]
         return None, None, None
-    
+
     with mido.open_input(input_device_name) as inport, mido.open_output(output_device_name) as outport:
         print(f"Mirroring MIDI from {input_device_name} to {output_device_name}...")
-        #print("step_map: ",step_map)
+        opposite_device = "device1" if device == "device2" else "device2"
         while True:
             
             while DHD_enabled and not stdin_queue.empty():
                 if dhd_device == input_device_name:
                     message = stdin_queue.get()
-                    #look at gpio_to_fader_button_map, get the id and the action
-                    #get the steps from the step_map
-                    #transform into a MIDI message
-                    #send the message
+                    # Look at gpio_to_fader_button_map, get the id and the action
+                    # Get the steps from the step_map
+                    # Transform into a MIDI message
+                    # Send the message
                     
                     message_queue.append(message)
                    
@@ -323,40 +328,55 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map,cc_to
                 message_str = midi_message_to_string(message)
                 message_buffer.append(message_str)
                 
+                # Mirror faders
+
+
                 # Mirror buttons         
                 # Check if the message is contained in the step_map
                 for button_id, actions in step_map.items():
                     for action, steps in actions.items():
                         for step in steps:                            
-                            if "AND" in step[device]:                                
+                            if "AND" in step[device]:
                                 steps_list = step[device].split(" AND ")
                                 if all(msg in message_buffer for msg in steps_list):
                                     print(f"Complete sequence matches for button {button_id}, action {action}")
-                                    message_buffer.clear()
-                                    # Process the matching message here
-                                    for step_msg in step[device].split(" AND "):
-                                        message_queue.append(mido.Message.from_str(step_msg))
+                                    # Check if this message is a special message that needs to trigger a key combination
+                                    special_message_result = handle_special_message(button_id)
+                                    if special_message_result:
+                                        trigger_key_press_id(special_message_result)
+                                        message_buffer.clear()
+                                    else:
+                                        #find the opposite step for the button and send that message
+                                        for opposite_step in step_map[button_id][action]:
+                                            for step_msg in opposite_step[opposite_device].split(" AND "):
+                                                message_queue.append(mido.Message.from_str(step_msg))   
+                                                print(step_msg)
+                                        message_buffer.clear()
+                                        pass
 
                             elif message_str in step[device]:
                                 print(f"Message {message_str} matches step_map for button {button_id}, action {action}")
-                                # Process the matching message here
-                                for step_msg in step[device].split(" AND "):
-                                    message_queue.append(mido.Message.from_str(step_msg))
+                                
+                                # Check if this message is a special message that needs to trigger a key combination
+                                special_message_result = handle_special_message(button_id) 
+                                if special_message_result:
+                                    trigger_key_press_id(special_message_result)
                                     message_buffer.clear()
+                                else:                                     
+
+                                    for mirrored_step in step_map[button_id][action]:
+                                        for step_msg in mirrored_step[opposite_device].split(" AND "):
+                                            message_queue.append(mido.Message.from_str(step_msg))
+                                            print(step_msg)
+                                    message_buffer.clear()
+                                    pass
+
                 
-                special_message_result = handle_special_message(message)
-                if special_message_result and DHD_enabled:
-                    trigger_key_press_id(special_message_result)
-                    continue
                 
-            
-                #Mirror faders
-            
-            
-            
+                
                 time.sleep(delay)
 
-        send_messages()
+            send_messages()
 
 def read_xml_config(file_name):
     # Construct the full path to the XML configuration file
