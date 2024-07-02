@@ -1,18 +1,18 @@
 ﻿<configuration>
 	<midi>
-		<midi_in_name>X-TOUCH COMPACT 0</midi_in_name>
-		<midi_out_name>X-TOUCH COMPACT 1</midi_out_name>
-		<channel>0</channel>
+		<midi_in_name>X-TOUCH COMPACT 1</midi_in_name>
+		<midi_out_name>X-TOUCH COMPACT 2</midi_out_name>
+		<channel>2</channel>
 	</midi>
 	<faders>
-		<fader id="1" type="control_change" value="1"/>
-		<fader id="2" type="control_change" value="2"/>
-		<fader id="3" type="control_change" value="3"/>
-		<fader id="4" type="control_change" value="4"/>
-		<fader id="5" type="control_change" value="5"/>
-		<fader id="6" type="control_change" value="10"/>
-		<fader id="7" type="control_change" value="7"/>
-		<fader id="8" type="control_change" value="8"/>
+		<fader id="1" type="control_change" value="10"/>
+		<fader id="2" type="control_change" value="20"/>
+		<fader id="3" type="control_change" value="30"/>
+		<fader id="4" type="control_change" value="40"/>
+		<fader id="5" type="control_change" value="50"/>
+		<fader id="6" type="control_change" value="100"/>
+		<fader id="7" type="control_change" value="70"/>
+		<fader id="8" type="control_change" value="80"/>
 	</faders>
 	<fader_buttons>
 		<fader_button id="1" type="toggle" value="40">

@@ -1,8 +1,10 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Collections.Generic;
 
 namespace Mirror_MIDI
 {
@@ -10,6 +12,8 @@ namespace Mirror_MIDI
     {
         private Process pythonProcess;
         private DHDServer dhdServer;
+        private List<CheckBox> selectedCheckBoxes = new List<CheckBox>();
+        private CheckBox[] checkBoxes;
 
         public Form1()
         {
@@ -19,8 +23,75 @@ namespace Mirror_MIDI
             // Add the FormClosing event handler
             this.FormClosing += new FormClosingEventHandler(Form1_FormClosing);
 
-            
+            // Initialize checkBoxes array
+            checkBoxes = new CheckBox[] { Cart1, Cart2, Cart3, Cart4, Cart5, Cart6, Cart7, Cart8 };
 
+            // Add CheckedChanged event handlers for checkboxes
+            AddCheckBoxEventHandlers();
+        }
+
+        private void AddCheckBoxEventHandlers()
+        {
+            foreach (var checkBox in checkBoxes)
+            {
+                checkBox.CheckedChanged += CheckBox_CheckedChanged;
+            }
+        }
+
+        private void CheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            CheckBox checkBox = sender as CheckBox;
+
+            if (checkBox.Checked)
+            {
+                if (selectedCheckBoxes.Count < 4)
+                {
+                    selectedCheckBoxes.Add(checkBox);
+                }
+                else
+                {
+                    checkBox.Checked = false;
+                }
+            }
+            else
+            {
+                selectedCheckBoxes.Remove(checkBox);
+            }
+
+            UpdateCheckBoxStates();
+        }
+
+        private void UpdateCheckBoxStates()
+        {
+            bool canCheckMore = selectedCheckBoxes.Count < 4;
+
+            foreach (var checkBox in checkBoxes)
+            {
+                if (!selectedCheckBoxes.Contains(checkBox))
+                {
+                    checkBox.Enabled = canCheckMore;
+                }
+            }
+        }
+
+        private Dictionary<int, int> GetSelectedCheckBoxesDictionary()
+        {
+            Dictionary<int, int> selectedDict = new Dictionary<int, int>();
+
+            for (int i = 0; i < selectedCheckBoxes.Count; i++)
+            {
+                CheckBox checkBox = selectedCheckBoxes[i];
+                int position = int.Parse(checkBox.Name.Replace("Cart", ""));
+                selectedDict[i + 1] = position;
+            }
+
+            // Print the dictionary to the console for debugging
+            foreach (var kvp in selectedDict)
+            {
+                Debug.WriteLine($"Fader {kvp.Key}: Cart {kvp.Value}");
+            }
+
+            return selectedDict;
         }
 
         private void PopulateDeviceLists()
@@ -67,13 +138,19 @@ namespace Mirror_MIDI
                     MessageBox.Show("DHD device must be selected when DHD is enabled.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-
+                /*
                 if (DHD_Status.Text != " Connected")
                 {
                     MessageBox.Show("Please wait for DHD connection to be established.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-
+                
+                if (selectedCheckBoxes.Count == 0)
+                {
+                    MessageBox.Show("At least one checkbox must be selected when DHD is enabled.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                */
             }
 
             Device1.Enabled = false;
@@ -84,12 +161,12 @@ namespace Mirror_MIDI
 
             string dhdEnabled = DHD_Enabled.Checked ? "True" : "False";
             string dhdDeviceSelection = DHD_Device.SelectedItem?.ToString() ?? "None";
-            StartPythonScript(Device1.SelectedItem.ToString(), Device2.SelectedItem.ToString(), dhdEnabled, dhdDeviceSelection);
+            Dictionary<int, int> selectedButtonsDict = GetSelectedCheckBoxesDictionary();
+            StartPythonScript(Device1.SelectedItem.ToString(), Device2.SelectedItem.ToString(), dhdEnabled, dhdDeviceSelection, selectedButtonsDict);
         }
 
         private void Stop_Click(object sender, EventArgs e)
         {
-
             StopPythonScript();
 
             Device1.Enabled = true;
@@ -99,7 +176,7 @@ namespace Mirror_MIDI
             Start.Enabled = true;
         }
 
-        private void StartPythonScript(string device1, string device2, string dhdEnabled, string dhdDevice)
+        private void StartPythonScript(string device1, string device2, string dhdEnabled, string dhdDevice, Dictionary<int, int> selectedButtonsDict)
         {
             string scriptName = "MIDI_mirror.py";
             string scriptPath = GetPythonScriptPath(scriptName);
@@ -109,25 +186,26 @@ namespace Mirror_MIDI
                 StopPythonScript();
             }
 
+            string selectedButtonsArg = string.Join(";", selectedButtonsDict.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
+
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
                 FileName = "python",
-                Arguments = $"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\"",
+                Arguments = $"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\" \"{selectedButtonsArg}\"",                
                 UseShellExecute = false,
-                RedirectStandardOutput = true,
+                RedirectStandardOutput = false,
                 RedirectStandardError = true,
                 RedirectStandardInput = true,
-                CreateNoWindow = true
-
+                CreateNoWindow = false
             };
 
+            Debug.WriteLine($"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\" \"{selectedButtonsArg}\"");
             pythonProcess = new Process { StartInfo = startInfo };
             pythonProcess.OutputDataReceived += PythonProcess_OutputDataReceived;
             pythonProcess.ErrorDataReceived += PythonProcess_ErrorDataReceived;
             pythonProcess.Start();
-            pythonProcess.BeginOutputReadLine();
+            //pythonProcess.BeginOutputReadLine();
             pythonProcess.BeginErrorReadLine();
-            
         }
 
         private void StopPythonScript()
@@ -195,6 +273,24 @@ namespace Mirror_MIDI
             bool isChecked = DHD_Enabled.Checked;
             DHD_Status.Visible = isChecked;
             DHD_Device.Visible = isChecked;
+            Fader_Label.Visible = isChecked;
+            Cart1_Label.Visible = isChecked;
+            Cart2_Label.Visible = isChecked;
+            Cart3_Label.Visible = isChecked;
+            Cart4_Label.Visible = isChecked;
+            Cart5_Label.Visible = isChecked;
+            Cart6_Label.Visible = isChecked;
+            Cart7_Label.Visible = isChecked;
+            Cart8_Label.Visible = isChecked;
+            Cart_Stack_Label.Visible = isChecked;
+            Cart1.Visible = isChecked;
+            Cart2.Visible = isChecked;
+            Cart3.Visible = isChecked;
+            Cart4.Visible = isChecked;
+            Cart5.Visible = isChecked;
+            Cart6.Visible = isChecked;
+            Cart7.Visible = isChecked;
+            Cart8.Visible = isChecked;
 
             // Ensure the server is only created once and controlled based on checkbox state
             if (dhdServer == null)
@@ -208,22 +304,22 @@ namespace Mirror_MIDI
             {
                 dhdServer.Start();
             }
-
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             StopPythonScript();
         }
+
         private void SendMessageToPythonScript(string message)
         {
             if (pythonProcess != null && !pythonProcess.HasExited)
             {
                 pythonProcess.StandardInput.WriteLine(message);
                 pythonProcess.StandardInput.Flush();
-
             }
         }
+
         private void PythonProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
             if (!string.IsNullOrEmpty(e.Data))
