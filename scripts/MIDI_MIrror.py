@@ -265,7 +265,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map,cc_to
     message_queue = deque()
     last_send_time = time.time()
     nrpn_cache = {}
-    message_buffer = {}
+    message_buffer = []
     buffer_timeout = 0.1
     
     #TODO: change function to define what buttons from config will trigger the key combination
@@ -290,7 +290,17 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map,cc_to
         
     def midi_message_to_string(message):
         return str(message)
-
+    
+    def check_step_map_sequence(buffer):
+        # Convert the message buffer to a single string for comparison
+        buffer_str = ' AND '.join(buffer)
+        for button_id, actions in step_map.items():
+            for action, steps in actions.items():
+                for step in steps:
+                    if step[device] == buffer_str:
+                        return button_id, action, step[device]
+        return None, None, None
+    
     with mido.open_input(input_device_name) as inport, mido.open_output(output_device_name) as outport:
         print(f"Mirroring MIDI from {input_device_name} to {output_device_name}...")
         #print("step_map: ",step_map)
@@ -311,15 +321,28 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map,cc_to
 
             for message in inport.iter_pending():               
                 message_str = midi_message_to_string(message)
-            
+                message_buffer.append(message_str)
+                
                 # Mirror buttons         
                 # Check if the message is contained in the step_map
                 for button_id, actions in step_map.items():
                     for action, steps in actions.items():
-                        for step in steps:
-                            if message_str in step[device]:
+                        for step in steps:                            
+                            if "AND" in step[device]:                                
+                                steps_list = step[device].split(" AND ")
+                                if all(msg in message_buffer for msg in steps_list):
+                                    print(f"Complete sequence matches for button {button_id}, action {action}")
+                                    message_buffer.clear()
+                                    # Process the matching message here
+                                    for step_msg in step[device].split(" AND "):
+                                        message_queue.append(mido.Message.from_str(step_msg))
+
+                            elif message_str in step[device]:
                                 print(f"Message {message_str} matches step_map for button {button_id}, action {action}")
                                 # Process the matching message here
+                                for step_msg in step[device].split(" AND "):
+                                    message_queue.append(mido.Message.from_str(step_msg))
+                                    message_buffer.clear()
                 
                 special_message_result = handle_special_message(message)
                 if special_message_result and DHD_enabled:
