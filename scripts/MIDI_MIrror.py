@@ -239,10 +239,7 @@ def nrpn_to_cc(nrpn_number, data_value, input_channel, channel_map, nrpn_to_cc_m
 
 
 def is_nrpn_control(control):
-    # Define the list of NRPN control numbers
-    nrpn_controls = [98, 99, 6, 38]    
-    # Check if all elements in the control list are in the list of NRPN controls
-    return all(c in nrpn_controls for c in control)
+    return control in [98, 99, 6, 38]
 
 
 
@@ -275,14 +272,12 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
     message_queue = deque()
     last_send_time = time.time()
     nrpn_cache = {}
-    message_buffer = []
-    buffer_timeout = 0.1
-
+    message_buffer = deque(maxlen=10)  # Using fixed-size deque for buffering messages
+    
     def handle_special_message(button_id):
-        # Check if the message is a special message that can trigger a key combination
         for Cart_Stack_number, allocated_button in Radio_Assist_Faders_Location.items():
             if allocated_button == button_id:
-                print(f"Special message detected for button {button_id}")                
+                print(f"Special message detected for button {button_id}")
                 return Cart_Stack_number
         return None
 
@@ -293,90 +288,86 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
             outport.send(msg)
         last_send_time = time.time()
 
-    def midi_message_to_string(message):
-        return str(message)
-
-    def check_step_map_sequence(buffer):
-        # Convert the message buffer to a single string for comparison
-        buffer_str = ' AND '.join(buffer)
-        for button_id, actions in step_map.items():
-            for action, steps in actions.items():
-                for step in steps:
-                    if step[device] == buffer_str:
-                        return button_id, action, step[device]
-        return None, None, None
-
     with mido.open_input(input_device_name) as inport, mido.open_output(output_device_name) as outport:
         print(f"Mirroring MIDI from {input_device_name} to {output_device_name}...")
         opposite_device = "device1" if device == "device2" else "device2"
         while True:
-            
-            while DHD_enabled and not stdin_queue.empty():
+            if DHD_enabled and not stdin_queue.empty():
                 if dhd_device == input_device_name:
                     message = stdin_queue.get()
-                    # Look at gpio_to_fader_button_map, get the id and the action
-                    # Get the steps from the step_map
-                    # Transform into a MIDI message
-                    # Send the message
-                    
                     message_queue.append(message)
-                   
-                else:
-                    pass
 
-            for message in inport.iter_pending():               
-                message_str = midi_message_to_string(message)
-                message_buffer.append(message_str)
-                
-                # Mirror faders
+            messages = list(inport.iter_pending())
+            if messages:
+                for message in messages:
+                    #print(f"Received MIDI message: {message}")  # Print statement for incoming MIDI message
+                    
+                    message_buffer.append(message)
 
+                    # Mirror faders
+                    converted_message = None
+                    if message.type == 'control_change':
+                        if convert_func == cc_to_cc:
+                            converted_message = cc_to_cc(message.control, message.value, message.channel, channel_map, cc_to_cc_map_device1)
+                        elif convert_func == nrpn_to_nrpn and is_nrpn_control(message.control):
+                            nrpn_data = process_nrpn_messages(nrpn_cache, message)
+                            if nrpn_data:
+                                nrpn_number, data_value = nrpn_data
+                                converted_message = nrpn_to_nrpn(nrpn_number, data_value, message.channel, channel_map, nrpn_to_nrpn_map_device1)
+                        elif convert_func == cc_to_nrpn:
+                            print("message control", message.control)
+                            print("message value", message.value)
+                            print("message channel", message.channel)
+                            print("channel map", channel_map)
+                            print("cc_to_nrpn_map", cc_to_nrpn_map)
+                            
+                            converted_message = cc_to_nrpn(message.control, message.value, message.channel, channel_map, cc_to_nrpn_map)
+                            print("converted message", converted_message)
+                        elif convert_func == nrpn_to_cc and is_nrpn_control(message.control):
+                            nrpn_data = process_nrpn_messages(nrpn_cache, message)
+                            if nrpn_data:
+                                nrpn_number, data_value = nrpn_data
+                                converted_message = nrpn_to_cc(nrpn_number, data_value, message.channel, channel_map, nrpn_to_cc_map)
+                    if converted_message:
+                        if isinstance(converted_message, list):
+                            message_queue.extend(converted_message)
+                        else:
+                            message_queue.append(converted_message)
+                        continue
 
-                # Mirror buttons         
-                # Check if the message is contained in the step_map
-                for button_id, actions in step_map.items():
-                    for action, steps in actions.items():
-                        for step in steps:                            
-                            if "AND" in step[device]:
-                                steps_list = step[device].split(" AND ")
-                                if all(msg in message_buffer for msg in steps_list):
-                                    print(f"Complete sequence matches for button {button_id}, action {action}")
-                                    # Check if this message is a special message that needs to trigger a key combination
-                                    special_message_result = handle_special_message(button_id)
-                                    if special_message_result:
-                                        trigger_key_press_id(special_message_result)
+                    if converted_message is None and not nrpn_cache:
+                        # Mirror buttons
+                        for button_id, actions in step_map.items():
+                            for action, steps in actions.items():
+                                for step in steps:
+                                    if " AND " in step[device]:
+                                        steps_list = step[device].split(" AND ")
+                                        if all(any(str(msg) == s for msg in message_buffer) for s in steps_list):
+                                            print(f"Complete sequence matches for button {button_id}, action {action}")
+                                            special_message_result = handle_special_message(button_id)
+                                            if special_message_result:
+                                                trigger_key_press_id(special_message_result)
+                                            else:
+                                                for opposite_step in step_map[button_id][action]:
+                                                    for step_msg in opposite_step[opposite_device].split(" AND "):
+                                                        message_queue.append(mido.Message.from_str(step_msg))
+                                            message_buffer.clear()
+                                            break
+                                    elif str(message) == step[device]:
+                                        print(f"Message {message} matches step_map for button {button_id}, action {action}")
+                                        special_message_result = handle_special_message(button_id)
+                                        if special_message_result:
+                                            trigger_key_press_id(special_message_result)
+                                        else:
+                                            for step_msg in step_map[button_id][action][0][opposite_device].split(" AND "):
+                                                message_queue.append(mido.Message.from_str(step_msg))
                                         message_buffer.clear()
-                                    else:
-                                        #find the opposite step for the button and send that message
-                                        for opposite_step in step_map[button_id][action]:
-                                            for step_msg in opposite_step[opposite_device].split(" AND "):
-                                                message_queue.append(mido.Message.from_str(step_msg))   
-                                                
-                                        message_buffer.clear()
-                                        pass
+                                        break
 
-                            elif message_str in step[device]:
-                                print(f"Message {message_str} matches step_map for button {button_id}, action {action}")
-                                
-                                # Check if this message is a special message that needs to trigger a key combination
-                                special_message_result = handle_special_message(button_id) 
-                                if special_message_result:
-                                    trigger_key_press_id(special_message_result)
-                                    message_buffer.clear()
-                                else:                                     
+                send_messages()
 
-                                    for mirrored_step in step_map[button_id][action]:
-                                        for step_msg in mirrored_step[opposite_device].split(" AND "):
-                                            message_queue.append(mido.Message.from_str(step_msg))
-                                            
-                                    message_buffer.clear()
-                                    pass
+            time.sleep(0.001)  # Introduce a small sleep to reduce CPU usage
 
-                
-                
-                
-                time.sleep(delay)
-
-            send_messages()
 
 def read_xml_config(file_name):
     # Construct the full path to the XML configuration file
@@ -665,4 +656,4 @@ if __name__ == "__main__":
     main()
 
 
-    #python "C:\Users\VILLALBAM3D\source\repos\Mirror_MIDI\scripts\MIDI_mirror.py" "Q16" "Xtouch-One" "False" "None" ""
+#python "C:\Users\VILLALBAM3D\source\repos\Mirror_MIDI\scripts\MIDI_mirror.py" "Q16" "Xtouch-One" "False" "Q16" "1:1;2:2"

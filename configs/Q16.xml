@@ -1,8 +1,8 @@
 ﻿<configuration>
 	<midi>
-		<midi_in_name>4- QU-16 MIDI In 1</midi_in_name>
-		<midi_out_name>4- QU-16 MIDI Out 2</midi_out_name>
-		<channel>1</channel>
+		<midi_in_name>4- QU-16 MIDI In 0</midi_in_name>
+		<midi_out_name>4- QU-16 MIDI Out 1</midi_out_name>
+		<channel>0</channel>
 	</midi>
 	<faders>
 		<fader id="1" type="NRPN" value="4119"/>
