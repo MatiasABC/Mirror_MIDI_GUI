@@ -1,3 +1,4 @@
+from operator import contains
 import sys
 import threading
 import xml.etree.ElementTree as ET
@@ -12,14 +13,14 @@ from pynput.keyboard import Key, Controller
 
 # Define the mapping of GPIO hex values to fader button IDs and actions
 gpio_to_fader_button_map = {
-    "2A00": (1, 'toggle_off'),
-    "2A01": (1, 'toggle_on'),
-    "2B00": (2, 'toggle_off'),
-    "2B01": (2, 'toggle_on'),
-    "2C00": (3, 'toggle_off'),
-    "2C01": (3, 'toggle_on'),
-    "2D00": (4, 'toggle_off'),
-    "2D01": (4, 'toggle_on')
+    "2A00": (1, 'toggle_on'),
+    "2A01": (1, 'toggle_off'),
+    "2B00": (2, 'toggle_on'),
+    "2B01": (2, 'toggle_off'),
+    "2C00": (3, 'toggle_on'),
+    "2C01": (3, 'toggle_off'),
+    "2D00": (4, 'toggle_on'),
+    "2D01": (4, 'toggle_off')
 }
 
 
@@ -268,6 +269,7 @@ def process_nrpn_messages(nrpn_cache, message):
     return None
 
 
+    
 def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, DHD_enabled, stdin_queue, Radio_Assist_Faders_Location, convert_func, dhd_device, delay=0.0001):
     message_queue = deque()
     last_send_time = time.time()
@@ -291,11 +293,27 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
     with mido.open_input(input_device_name) as inport, mido.open_output(output_device_name) as outport:
         print(f"Mirroring MIDI from {input_device_name} to {output_device_name}...")
         opposite_device = "device1" if device == "device2" else "device2"
+        
         while True:
-            if DHD_enabled and not stdin_queue.empty():
-                if dhd_device == input_device_name:
-                    message = stdin_queue.get()
-                    message_queue.append(message)
+            while DHD_enabled and not stdin_queue.empty():
+                step, dhd_device = stdin_queue.get()
+                if " AND " in step[opposite_device]:
+                    steps_list = step[opposite_device].split(" AND ")
+                    for s in steps_list:
+                        try:
+                            message = mido.Message.from_str(s)
+                            message_queue.append(message)
+                            print(f"Appending message for opposite device to queue: {message}")
+                        except Exception as e:
+                            print(f"Error converting message for opposite device from string: {e}")
+                else:
+                    try:
+                        message = mido.Message.from_str(step[opposite_device])
+                        message_queue.append(message)
+                        print(f"Appending message for opposite device to queue: {message}")
+                    except Exception as e:
+                        print(f"Error converting message for opposite device from string: {e}")
+                send_messages()                 
 
             messages = list(inport.iter_pending())
             if messages:
@@ -314,15 +332,8 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                             if nrpn_data:
                                 nrpn_number, data_value = nrpn_data
                                 converted_message = nrpn_to_nrpn(nrpn_number, data_value, message.channel, channel_map, nrpn_to_nrpn_map_device1)
-                        elif convert_func == cc_to_nrpn:
-                            print("message control", message.control)
-                            print("message value", message.value)
-                            print("message channel", message.channel)
-                            print("channel map", channel_map)
-                            print("cc_to_nrpn_map", cc_to_nrpn_map)
-                            
+                        elif convert_func == cc_to_nrpn:                            
                             converted_message = cc_to_nrpn(message.control, message.value, message.channel, channel_map, cc_to_nrpn_map)
-                            print("converted message", converted_message)
                         elif convert_func == nrpn_to_cc and is_nrpn_control(message.control):
                             nrpn_data = process_nrpn_messages(nrpn_cache, message)
                             if nrpn_data:
@@ -343,9 +354,9 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                     if " AND " in step[device]:
                                         steps_list = step[device].split(" AND ")
                                         if all(any(str(msg) == s for msg in message_buffer) for s in steps_list):
-                                            print(f"Complete sequence matches for button {button_id}, action {action}")
+                                            #print(f"Complete sequence matches for button {button_id}, action {action}")
                                             special_message_result = handle_special_message(button_id)
-                                            if special_message_result:
+                                            if special_message_result and DHD_enabled:
                                                 trigger_key_press_id(special_message_result)
                                             else:
                                                 for opposite_step in step_map[button_id][action]:
@@ -354,9 +365,9 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                             message_buffer.clear()
                                             break
                                     elif str(message) == step[device]:
-                                        print(f"Message {message} matches step_map for button {button_id}, action {action}")
+                                        #print(f"Message {message} matches step_map for button {button_id}, action {action}")
                                         special_message_result = handle_special_message(button_id)
-                                        if special_message_result:
+                                        if special_message_result and DHD_enabled:
                                             trigger_key_press_id(special_message_result)
                                         else:
                                             for step_msg in step_map[button_id][action][0][opposite_device].split(" AND "):
@@ -547,7 +558,7 @@ def convert_to_dict(s):
     
     return result
 
-def listen_to_stdin(dhd_device_config, step_map, stdin_queue, dhd_device = "device2"):
+def listen_to_stdin(dhd_device_config, step_map, stdin_queue, dhd_device,Radio_Assist_Faders_Location):
     print("Ready to receive data from C#...")
     sys.stdout.flush()
 
@@ -559,9 +570,9 @@ def listen_to_stdin(dhd_device_config, step_map, stdin_queue, dhd_device = "devi
 
                 hex_action = line.strip()
                 if hex_action in gpio_to_fader_button_map:
-                    button_id, action = gpio_to_fader_button_map[hex_action]
-                    steps = step_map[button_id]                    
-                    for step in steps[action]:
+                    Cart_stack_triggered, action = gpio_to_fader_button_map[hex_action]
+                    steps = step_map[Radio_Assist_Faders_Location[Cart_stack_triggered]]                    
+                    for step in steps[action]:                        
                         stdin_queue.put((step, dhd_device))                    
                 else:
                     print(f"Unknown or malformed action received: {line.strip()}")
@@ -637,7 +648,7 @@ def main():
     
     
     if dhd_enabled:
-        stdin_thread = threading.Thread(target=listen_to_stdin, args=(dhd_config, step_map, stdin_queue))
+        stdin_thread = threading.Thread(target=listen_to_stdin, args=(dhd_config, step_map, stdin_queue, dhd_device,Radio_Assist_Faders_Location))
         stdin_thread.start()
 
         print("DHD is enabled. Listening for updates...")
