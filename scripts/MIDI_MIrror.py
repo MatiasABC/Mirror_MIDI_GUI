@@ -279,7 +279,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
             messages = list(inport.iter_pending())
             if messages:
                 for message in messages:
-                    print(f"Received MIDI message: {message}")
+                    #print(f"Received MIDI message: {message}")
                     message_buffer.append(message)
 
                     converted_message = None
