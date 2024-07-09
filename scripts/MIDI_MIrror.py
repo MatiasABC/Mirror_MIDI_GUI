@@ -557,15 +557,19 @@ def main():
 
     if device1_config['midi_in_name'] not in available_inputs:
         print(f"Error: Input device '{device1_config['midi_in_name']}' for device1 not found.")
+        raise Exception(f"Error: {device1_config['midi_in_name']} device not found. Available Inputs are: {available_inputs}. Please check configuration file.")
         sys.exit(1)
     if device1_config['midi_out_name'] not in available_outputs:
         print(f"Error: Output device '{device1_config['midi_out_name']}' for device1 not found.")
+        raise Exception(f"Error: {device1_config['midi_out_name']} device not found. Available Outputs are: {available_outputs}. Please check configuration file.")  
         sys.exit(1)
     if device2_config['midi_in_name'] not in available_inputs:
         print(f"Error: Input device '{device2_config['midi_in_name']}' for device2 not found.")
+        raise Exception(f"Error: {device2_config['midi_in_name']} device not found. Available Inputs are: {available_inputs}. Please check configuration file.")
         sys.exit(1)
     if device2_config['midi_out_name'] not in available_outputs:
         print(f"Error: Output device '{device2_config['midi_out_name']}' for device2 not found.")
+        raise Exception(f"Error: {device2_config['midi_out_name']} device not found. Available Outputs are: {available_outputs}. Please check configuration file.")        
         sys.exit(1)
 
     cc_to_cc_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device1, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map = build_fader_mappings(device1_config, device2_config)

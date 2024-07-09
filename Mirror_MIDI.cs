@@ -138,19 +138,19 @@ namespace Mirror_MIDI
                     MessageBox.Show("DHD device must be selected when DHD is enabled.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-                
+
                 if (DHD_Status.Text != " Connected")
                 {
                     MessageBox.Show("Please wait for DHD connection to be established.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-                
+
                 if (selectedCheckBoxes.Count == 0)
                 {
                     MessageBox.Show("At least one checkbox must be selected when DHD is enabled.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-                
+
             }
 
             Device1.Enabled = false;
@@ -191,12 +191,12 @@ namespace Mirror_MIDI
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
                 FileName = "python",
-                Arguments = $"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\" \"{selectedButtonsArg}\"",                
+                Arguments = $"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\" \"{selectedButtonsArg}\"",
                 UseShellExecute = false,
-                RedirectStandardOutput = true,
+                RedirectStandardOutput = false,
                 RedirectStandardError = true,
                 RedirectStandardInput = true,
-                CreateNoWindow = true
+                CreateNoWindow = false
             };
 
             Debug.WriteLine($"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\" \"{selectedButtonsArg}\"");
@@ -204,7 +204,7 @@ namespace Mirror_MIDI
             pythonProcess.OutputDataReceived += PythonProcess_OutputDataReceived;
             pythonProcess.ErrorDataReceived += PythonProcess_ErrorDataReceived;
             pythonProcess.Start();
-            pythonProcess.BeginOutputReadLine();
+            //pythonProcess.BeginOutputReadLine();
             pythonProcess.BeginErrorReadLine();
         }
 
@@ -337,9 +337,18 @@ namespace Mirror_MIDI
             {
                 this.Invoke(new Action(() =>
                 {
+                    // Log the error to the debug console
                     Debug.WriteLine(e.Data, "Python Error");
+
+                    // Show a message box with the error information if it begins with "Exception"
+                    if (e.Data.StartsWith("Exception"))
+                    {
+                        MessageBox.Show(e.Data, "Python Script Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }));
             }
         }
+
+
     }
 }
