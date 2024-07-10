@@ -99,7 +99,7 @@ namespace Mirror_MIDI
         private void PopulateDeviceLists()
         {
             string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            string configPath = Path.Combine(baseDirectory, "..", "..", "..", "configs");
+            string configPath = Path.Combine(baseDirectory, "configs");
 
             if (Directory.Exists(configPath))
             {
@@ -308,6 +308,7 @@ namespace Mirror_MIDI
             Cart6.Visible = isChecked;
             Cart7.Visible = isChecked;
             Cart8.Visible = isChecked;
+            SingleMixingDesk_label.Visible = isChecked;
 
             // Ensure the server is only created once and controlled based on checkbox state
             if (dhdServer == null)

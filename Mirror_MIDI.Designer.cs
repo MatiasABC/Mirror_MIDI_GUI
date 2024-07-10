@@ -59,6 +59,7 @@
             OnAirLights_checkbox = new CheckBox();
             label3 = new Label();
             COM_options = new ComboBox();
+            SingleMixingDesk_label = new Label();
             SuspendLayout();
             // 
             // label1
@@ -107,7 +108,7 @@
             DHD_Status.BorderStyle = BorderStyle.FixedSingle;
             DHD_Status.Enabled = false;
             DHD_Status.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            DHD_Status.Location = new Point(12, 139);
+            DHD_Status.Location = new Point(12, 165);
             DHD_Status.Name = "DHD_Status";
             DHD_Status.ReadOnly = true;
             DHD_Status.Size = new Size(172, 38);
@@ -150,7 +151,7 @@
             DHD_Device.AllowDrop = true;
             DHD_Device.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
             DHD_Device.FormattingEnabled = true;
-            DHD_Device.Location = new Point(12, 94);
+            DHD_Device.Location = new Point(12, 120);
             DHD_Device.Name = "DHD_Device";
             DHD_Device.Size = new Size(172, 39);
             DHD_Device.TabIndex = 10;
@@ -159,7 +160,7 @@
             // Fader_Label
             // 
             Fader_Label.AutoSize = true;
-            Fader_Label.Location = new Point(341, 106);
+            Fader_Label.Location = new Point(341, 132);
             Fader_Label.Name = "Fader_Label";
             Fader_Label.Size = new Size(51, 20);
             Fader_Label.TabIndex = 11;
@@ -169,7 +170,7 @@
             // Cart1_Label
             // 
             Cart1_Label.AutoSize = true;
-            Cart1_Label.Location = new Point(285, 126);
+            Cart1_Label.Location = new Point(285, 152);
             Cart1_Label.Name = "Cart1_Label";
             Cart1_Label.Size = new Size(17, 20);
             Cart1_Label.TabIndex = 12;
@@ -179,7 +180,7 @@
             // Cart2_Label
             // 
             Cart2_Label.AutoSize = true;
-            Cart2_Label.Location = new Point(308, 126);
+            Cart2_Label.Location = new Point(308, 152);
             Cart2_Label.Name = "Cart2_Label";
             Cart2_Label.Size = new Size(17, 20);
             Cart2_Label.TabIndex = 13;
@@ -189,7 +190,7 @@
             // Cart3_Label
             // 
             Cart3_Label.AutoSize = true;
-            Cart3_Label.Location = new Point(331, 126);
+            Cart3_Label.Location = new Point(331, 152);
             Cart3_Label.Name = "Cart3_Label";
             Cart3_Label.Size = new Size(17, 20);
             Cart3_Label.TabIndex = 14;
@@ -199,7 +200,7 @@
             // Cart4_Label
             // 
             Cart4_Label.AutoSize = true;
-            Cart4_Label.Location = new Point(354, 126);
+            Cart4_Label.Location = new Point(354, 152);
             Cart4_Label.Name = "Cart4_Label";
             Cart4_Label.Size = new Size(17, 20);
             Cart4_Label.TabIndex = 15;
@@ -209,7 +210,7 @@
             // Cart5_Label
             // 
             Cart5_Label.AutoSize = true;
-            Cart5_Label.Location = new Point(377, 126);
+            Cart5_Label.Location = new Point(377, 152);
             Cart5_Label.Name = "Cart5_Label";
             Cart5_Label.Size = new Size(17, 20);
             Cart5_Label.TabIndex = 16;
@@ -219,7 +220,7 @@
             // Cart6_Label
             // 
             Cart6_Label.AutoSize = true;
-            Cart6_Label.Location = new Point(400, 126);
+            Cart6_Label.Location = new Point(400, 152);
             Cart6_Label.Name = "Cart6_Label";
             Cart6_Label.Size = new Size(17, 20);
             Cart6_Label.TabIndex = 17;
@@ -229,7 +230,7 @@
             // Cart7_Label
             // 
             Cart7_Label.AutoSize = true;
-            Cart7_Label.Location = new Point(423, 126);
+            Cart7_Label.Location = new Point(423, 152);
             Cart7_Label.Name = "Cart7_Label";
             Cart7_Label.Size = new Size(17, 20);
             Cart7_Label.TabIndex = 18;
@@ -239,7 +240,7 @@
             // Cart8_Label
             // 
             Cart8_Label.AutoSize = true;
-            Cart8_Label.Location = new Point(446, 126);
+            Cart8_Label.Location = new Point(446, 152);
             Cart8_Label.Name = "Cart8_Label";
             Cart8_Label.Size = new Size(17, 20);
             Cart8_Label.TabIndex = 19;
@@ -249,7 +250,7 @@
             // Cart_Stack_Label
             // 
             Cart_Stack_Label.AutoSize = true;
-            Cart_Stack_Label.Location = new Point(205, 147);
+            Cart_Stack_Label.Location = new Point(205, 173);
             Cart_Stack_Label.Name = "Cart_Stack_Label";
             Cart_Stack_Label.Size = new Size(75, 20);
             Cart_Stack_Label.TabIndex = 20;
@@ -259,7 +260,7 @@
             // Cart1
             // 
             Cart1.AutoSize = true;
-            Cart1.Location = new Point(286, 150);
+            Cart1.Location = new Point(286, 176);
             Cart1.Name = "Cart1";
             Cart1.Size = new Size(18, 17);
             Cart1.TabIndex = 21;
@@ -269,7 +270,7 @@
             // Cart2
             // 
             Cart2.AutoSize = true;
-            Cart2.Location = new Point(307, 150);
+            Cart2.Location = new Point(307, 176);
             Cart2.Name = "Cart2";
             Cart2.Size = new Size(18, 17);
             Cart2.TabIndex = 22;
@@ -279,7 +280,7 @@
             // Cart3
             // 
             Cart3.AutoSize = true;
-            Cart3.Location = new Point(330, 150);
+            Cart3.Location = new Point(330, 176);
             Cart3.Name = "Cart3";
             Cart3.Size = new Size(18, 17);
             Cart3.TabIndex = 23;
@@ -289,7 +290,7 @@
             // Cart4
             // 
             Cart4.AutoSize = true;
-            Cart4.Location = new Point(353, 150);
+            Cart4.Location = new Point(353, 176);
             Cart4.Name = "Cart4";
             Cart4.Size = new Size(18, 17);
             Cart4.TabIndex = 24;
@@ -299,7 +300,7 @@
             // Cart5
             // 
             Cart5.AutoSize = true;
-            Cart5.Location = new Point(374, 150);
+            Cart5.Location = new Point(374, 176);
             Cart5.Name = "Cart5";
             Cart5.Size = new Size(18, 17);
             Cart5.TabIndex = 25;
@@ -309,7 +310,7 @@
             // Cart6
             // 
             Cart6.AutoSize = true;
-            Cart6.Location = new Point(398, 150);
+            Cart6.Location = new Point(398, 176);
             Cart6.Name = "Cart6";
             Cart6.Size = new Size(18, 17);
             Cart6.TabIndex = 26;
@@ -319,7 +320,7 @@
             // Cart7
             // 
             Cart7.AutoSize = true;
-            Cart7.Location = new Point(422, 150);
+            Cart7.Location = new Point(422, 176);
             Cart7.Name = "Cart7";
             Cart7.Size = new Size(18, 17);
             Cart7.TabIndex = 27;
@@ -329,7 +330,7 @@
             // Cart8
             // 
             Cart8.AutoSize = true;
-            Cart8.Location = new Point(445, 150);
+            Cart8.Location = new Point(445, 176);
             Cart8.Name = "Cart8";
             Cart8.Size = new Size(18, 17);
             Cart8.TabIndex = 28;
@@ -367,12 +368,23 @@
             COM_options.TabIndex = 31;
             COM_options.Visible = false;
             // 
+            // SingleMixingDesk_label
+            // 
+            SingleMixingDesk_label.AutoSize = true;
+            SingleMixingDesk_label.Location = new Point(28, 97);
+            SingleMixingDesk_label.Name = "SingleMixingDesk_label";
+            SingleMixingDesk_label.Size = new Size(135, 20);
+            SingleMixingDesk_label.TabIndex = 32;
+            SingleMixingDesk_label.Text = "Single Mixing Desk";
+            SingleMixingDesk_label.Visible = false;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.AppWorkspace;
-            ClientSize = new Size(596, 194);
+            ClientSize = new Size(596, 210);
+            Controls.Add(SingleMixingDesk_label);
             Controls.Add(COM_options);
             Controls.Add(OnAirLights_checkbox);
             Controls.Add(label3);
@@ -441,5 +453,6 @@
         private CheckBox OnAirLights_checkbox;
         private Label label3;
         private ComboBox COM_options;
+        private Label SingleMixingDesk_label;
     }
 }

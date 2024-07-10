@@ -510,7 +510,7 @@ def convert_to_dict(s):
         result[int(key)] = int(value)
     return result
 
-def listen_to_stdin(dhd_device_config, step_map, stdin_queue_device1, stdin_queue_device2, dhd_device, Radio_Assist_Faders_Location):
+def listen_to_stdin(step_map, stdin_queue_device1, stdin_queue_device2,Radio_Assist_Faders_Location):
     try:
         for line in sys.stdin:
             if line.strip():
@@ -612,7 +612,7 @@ def main():
         ser = ""
         
     if dhd_enabled:
-        stdin_thread = threading.Thread(target=listen_to_stdin, args=(dhd_config, step_map, stdin_queue_device1, stdin_queue_device2, dhd_device, Radio_Assist_Faders_Location))
+        stdin_thread = threading.Thread(target=listen_to_stdin, args=(step_map, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location))
         stdin_thread.start()
 
         print("DHD is enabled. Listening for updates...")
