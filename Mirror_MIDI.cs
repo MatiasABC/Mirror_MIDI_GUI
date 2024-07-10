@@ -5,6 +5,8 @@ using System.Linq;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Collections.Generic;
+using System.IO.Ports;
+
 
 namespace Mirror_MIDI
 {
@@ -115,6 +117,12 @@ namespace Mirror_MIDI
             {
                 MessageBox.Show("Config folder not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            // Populate COM_options with available COM ports
+            string[] comPorts = SerialPort.GetPortNames();
+            foreach (string port in comPorts)
+            {
+                COM_options.Items.Add(port);
+            }
         }
 
         private void Start_Click(object sender, EventArgs e)
@@ -158,11 +166,17 @@ namespace Mirror_MIDI
             DHD_Enabled.Enabled = false;
             DHD_Device.Enabled = false;
             Start.Enabled = false;
+            OnAirLights_checkbox.Enabled = false;
+            COM_options.Enabled = false;
 
             string dhdEnabled = DHD_Enabled.Checked ? "True" : "False";
+            string OnAirLights = OnAirLights_checkbox.Checked ? "True" : "False";
+            string COM = COM_options.SelectedItem?.ToString() ?? "None";
             string dhdDeviceSelection = DHD_Device.SelectedItem?.ToString() ?? "None";
             Dictionary<int, int> selectedButtonsDict = GetSelectedCheckBoxesDictionary();
-            StartPythonScript(Device1.SelectedItem.ToString(), Device2.SelectedItem.ToString(), dhdEnabled, dhdDeviceSelection, selectedButtonsDict);
+
+            StartPythonScript(Device1.SelectedItem.ToString(), Device2.SelectedItem.ToString(), dhdEnabled, dhdDeviceSelection, selectedButtonsDict, OnAirLights, COM);
+
         }
 
         private void Stop_Click(object sender, EventArgs e)
@@ -174,9 +188,11 @@ namespace Mirror_MIDI
             DHD_Enabled.Enabled = true;
             DHD_Device.Enabled = true;
             Start.Enabled = true;
+            OnAirLights_checkbox.Enabled = true;
+            COM_options.Enabled = true;
         }
 
-        private void StartPythonScript(string device1, string device2, string dhdEnabled, string dhdDevice, Dictionary<int, int> selectedButtonsDict)
+        private void StartPythonScript(string device1, string device2, string dhdEnabled, string dhdDevice, Dictionary<int, int> selectedButtonsDict, string OnAirLights, string COM)
         {
             string scriptName = "MIDI_mirror.py";
             string scriptPath = GetPythonScriptPath(scriptName);
@@ -191,7 +207,7 @@ namespace Mirror_MIDI
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
                 FileName = "python",
-                Arguments = $"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\" \"{selectedButtonsArg}\"",
+                Arguments = $"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\" \"{selectedButtonsArg}\" \"{OnAirLights}\" \"{COM}\"",
                 UseShellExecute = false,
                 RedirectStandardOutput = false,
                 RedirectStandardError = true,
@@ -199,7 +215,7 @@ namespace Mirror_MIDI
                 CreateNoWindow = false
             };
 
-            Debug.WriteLine($"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\" \"{selectedButtonsArg}\"");
+            Debug.WriteLine($"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\" \"{selectedButtonsArg}\" \"{OnAirLights}\" \"{COM}\"");
             pythonProcess = new Process { StartInfo = startInfo };
             pythonProcess.OutputDataReceived += PythonProcess_OutputDataReceived;
             pythonProcess.ErrorDataReceived += PythonProcess_ErrorDataReceived;
@@ -207,6 +223,7 @@ namespace Mirror_MIDI
             //pythonProcess.BeginOutputReadLine();
             pythonProcess.BeginErrorReadLine();
         }
+
 
         private void StopPythonScript()
         {
@@ -349,6 +366,9 @@ namespace Mirror_MIDI
             }
         }
 
-
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            COM_options.Visible = OnAirLights_checkbox.Checked;
+        }
     }
 }

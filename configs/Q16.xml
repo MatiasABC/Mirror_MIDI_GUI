@@ -1,7 +1,7 @@
 ﻿<configuration>
 	<midi>
-		<midi_in_name>3- QU-16 MIDI In 0</midi_in_name>
-		<midi_out_name>3- QU-16 MIDI Out 1</midi_out_name>
+		<midi_in_name>5- QU-16 MIDI In 1</midi_in_name>
+		<midi_out_name>5- QU-16 MIDI Out 2</midi_out_name>
 		<channel>0</channel>
 	</midi>
 	<faders>
@@ -11,8 +11,8 @@
 		<fader id="4" type="NRPN" value="4503"/>
 		<fader id="5" type="NRPN" value="4631"/>
 		<fader id="6" type="NRPN" value="4759"/>
-		<fader id="7" type="NRPN" value="4887"/>
-		<fader id="8" type="NRPN" value="5015"/>
+		<fader id="7" type="NRPN" value="8215"/>
+		<fader id="8" type="NRPN" value="8471"/>
 		
 	</faders>
 	<fader_buttons>
@@ -41,12 +41,17 @@
 			<toggle_on>note_on channel=0 note=37 velocity=63 time=0 AND note_off channel=0 note=37 velocity=0 time=0</toggle_on>
 		</fader_button>
 		<fader_button id="7" type="toggle" value="38">
-			<toggle_off>note_on channel=0 note=38 velocity=127 time=0 AND note_off channel=0 note=38 velocity=0 time=0</toggle_off>
-			<toggle_on>note_on channel=0 note=38 velocity=63 time=0 AND note_off channel=0 note=38 velocity=0 time=0</toggle_on>
+			<toggle_off>note_on channel=0 note=64 velocity=127 time=0 AND note_off channel=0 note=64 velocity=0 time=0</toggle_off>
+			<toggle_on>note_on channel=0 note=64 velocity=63 time=0 AND note_off channel=0 note=64 velocity=0 time=0</toggle_on>
 		</fader_button>
 		<fader_button id="8" type="toggle" value="39">
-			<toggle_off>note_on channel=0 note=39 velocity=127 time=0 AND note_off channel=0 note=39 velocity=0 time=0</toggle_off>
-			<toggle_on>note_on channel=0 note=39 velocity=63 time=0 AND note_off channel=0 note=39 velocity=0 time=0</toggle_on>
+			<toggle_off>note_on channel=0 note=66 velocity=127 time=0 AND note_off channel=0 note=66 velocity=0 time=0</toggle_off>
+			<toggle_on>note_on channel=0 note=66 velocity=63 time=0 AND note_off channel=0 note=66 velocity=0 time=0</toggle_on>
 		</fader_button>
+		<fader_button id="9" type="toggle" value="32">
+			<toggle_on>note_on channel=0 note=32 velocity=127 time=0 AND note_off channel=0 note=32 velocity=0 time=0</toggle_on>
+			<toggle_off>note_on channel=0 note=32 velocity=63 time=0 AND note_off channel=0 note=32 velocity=0 time=0</toggle_off>
+		</fader_button>
+
 	</fader_buttons>
 </configuration>

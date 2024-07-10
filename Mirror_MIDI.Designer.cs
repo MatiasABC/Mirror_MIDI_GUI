@@ -56,6 +56,9 @@
             Cart6 = new CheckBox();
             Cart7 = new CheckBox();
             Cart8 = new CheckBox();
+            OnAirLights_checkbox = new CheckBox();
+            label3 = new Label();
+            COM_options = new ComboBox();
             SuspendLayout();
             // 
             // label1
@@ -156,7 +159,7 @@
             // Fader_Label
             // 
             Fader_Label.AutoSize = true;
-            Fader_Label.Location = new Point(334, 84);
+            Fader_Label.Location = new Point(341, 106);
             Fader_Label.Name = "Fader_Label";
             Fader_Label.Size = new Size(51, 20);
             Fader_Label.TabIndex = 11;
@@ -166,7 +169,7 @@
             // Cart1_Label
             // 
             Cart1_Label.AutoSize = true;
-            Cart1_Label.Location = new Point(278, 104);
+            Cart1_Label.Location = new Point(285, 126);
             Cart1_Label.Name = "Cart1_Label";
             Cart1_Label.Size = new Size(17, 20);
             Cart1_Label.TabIndex = 12;
@@ -176,7 +179,7 @@
             // Cart2_Label
             // 
             Cart2_Label.AutoSize = true;
-            Cart2_Label.Location = new Point(301, 104);
+            Cart2_Label.Location = new Point(308, 126);
             Cart2_Label.Name = "Cart2_Label";
             Cart2_Label.Size = new Size(17, 20);
             Cart2_Label.TabIndex = 13;
@@ -186,7 +189,7 @@
             // Cart3_Label
             // 
             Cart3_Label.AutoSize = true;
-            Cart3_Label.Location = new Point(324, 104);
+            Cart3_Label.Location = new Point(331, 126);
             Cart3_Label.Name = "Cart3_Label";
             Cart3_Label.Size = new Size(17, 20);
             Cart3_Label.TabIndex = 14;
@@ -196,7 +199,7 @@
             // Cart4_Label
             // 
             Cart4_Label.AutoSize = true;
-            Cart4_Label.Location = new Point(347, 104);
+            Cart4_Label.Location = new Point(354, 126);
             Cart4_Label.Name = "Cart4_Label";
             Cart4_Label.Size = new Size(17, 20);
             Cart4_Label.TabIndex = 15;
@@ -206,7 +209,7 @@
             // Cart5_Label
             // 
             Cart5_Label.AutoSize = true;
-            Cart5_Label.Location = new Point(370, 104);
+            Cart5_Label.Location = new Point(377, 126);
             Cart5_Label.Name = "Cart5_Label";
             Cart5_Label.Size = new Size(17, 20);
             Cart5_Label.TabIndex = 16;
@@ -216,7 +219,7 @@
             // Cart6_Label
             // 
             Cart6_Label.AutoSize = true;
-            Cart6_Label.Location = new Point(393, 104);
+            Cart6_Label.Location = new Point(400, 126);
             Cart6_Label.Name = "Cart6_Label";
             Cart6_Label.Size = new Size(17, 20);
             Cart6_Label.TabIndex = 17;
@@ -226,7 +229,7 @@
             // Cart7_Label
             // 
             Cart7_Label.AutoSize = true;
-            Cart7_Label.Location = new Point(416, 104);
+            Cart7_Label.Location = new Point(423, 126);
             Cart7_Label.Name = "Cart7_Label";
             Cart7_Label.Size = new Size(17, 20);
             Cart7_Label.TabIndex = 18;
@@ -236,7 +239,7 @@
             // Cart8_Label
             // 
             Cart8_Label.AutoSize = true;
-            Cart8_Label.Location = new Point(439, 104);
+            Cart8_Label.Location = new Point(446, 126);
             Cart8_Label.Name = "Cart8_Label";
             Cart8_Label.Size = new Size(17, 20);
             Cart8_Label.TabIndex = 19;
@@ -246,7 +249,7 @@
             // Cart_Stack_Label
             // 
             Cart_Stack_Label.AutoSize = true;
-            Cart_Stack_Label.Location = new Point(198, 125);
+            Cart_Stack_Label.Location = new Point(205, 147);
             Cart_Stack_Label.Name = "Cart_Stack_Label";
             Cart_Stack_Label.Size = new Size(75, 20);
             Cart_Stack_Label.TabIndex = 20;
@@ -256,7 +259,7 @@
             // Cart1
             // 
             Cart1.AutoSize = true;
-            Cart1.Location = new Point(279, 128);
+            Cart1.Location = new Point(286, 150);
             Cart1.Name = "Cart1";
             Cart1.Size = new Size(18, 17);
             Cart1.TabIndex = 21;
@@ -266,7 +269,7 @@
             // Cart2
             // 
             Cart2.AutoSize = true;
-            Cart2.Location = new Point(300, 128);
+            Cart2.Location = new Point(307, 150);
             Cart2.Name = "Cart2";
             Cart2.Size = new Size(18, 17);
             Cart2.TabIndex = 22;
@@ -276,7 +279,7 @@
             // Cart3
             // 
             Cart3.AutoSize = true;
-            Cart3.Location = new Point(323, 128);
+            Cart3.Location = new Point(330, 150);
             Cart3.Name = "Cart3";
             Cart3.Size = new Size(18, 17);
             Cart3.TabIndex = 23;
@@ -286,7 +289,7 @@
             // Cart4
             // 
             Cart4.AutoSize = true;
-            Cart4.Location = new Point(346, 128);
+            Cart4.Location = new Point(353, 150);
             Cart4.Name = "Cart4";
             Cart4.Size = new Size(18, 17);
             Cart4.TabIndex = 24;
@@ -296,7 +299,7 @@
             // Cart5
             // 
             Cart5.AutoSize = true;
-            Cart5.Location = new Point(367, 128);
+            Cart5.Location = new Point(374, 150);
             Cart5.Name = "Cart5";
             Cart5.Size = new Size(18, 17);
             Cart5.TabIndex = 25;
@@ -306,7 +309,7 @@
             // Cart6
             // 
             Cart6.AutoSize = true;
-            Cart6.Location = new Point(391, 128);
+            Cart6.Location = new Point(398, 150);
             Cart6.Name = "Cart6";
             Cart6.Size = new Size(18, 17);
             Cart6.TabIndex = 26;
@@ -316,7 +319,7 @@
             // Cart7
             // 
             Cart7.AutoSize = true;
-            Cart7.Location = new Point(415, 128);
+            Cart7.Location = new Point(422, 150);
             Cart7.Name = "Cart7";
             Cart7.Size = new Size(18, 17);
             Cart7.TabIndex = 27;
@@ -326,12 +329,43 @@
             // Cart8
             // 
             Cart8.AutoSize = true;
-            Cart8.Location = new Point(438, 128);
+            Cart8.Location = new Point(445, 150);
             Cart8.Name = "Cart8";
             Cart8.Size = new Size(18, 17);
             Cart8.TabIndex = 28;
             Cart8.UseVisualStyleBackColor = true;
             Cart8.Visible = false;
+            // 
+            // OnAirLights_checkbox
+            // 
+            OnAirLights_checkbox.AutoSize = true;
+            OnAirLights_checkbox.Location = new Point(334, 67);
+            OnAirLights_checkbox.Name = "OnAirLights_checkbox";
+            OnAirLights_checkbox.Size = new Size(18, 17);
+            OnAirLights_checkbox.TabIndex = 30;
+            OnAirLights_checkbox.UseVisualStyleBackColor = true;
+            OnAirLights_checkbox.CheckedChanged += checkBox1_CheckedChanged;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            label3.Location = new Point(190, 55);
+            label3.Name = "label3";
+            label3.Size = new Size(147, 31);
+            label3.TabIndex = 29;
+            label3.Text = "On Air Lights";
+            // 
+            // COM_options
+            // 
+            COM_options.AllowDrop = true;
+            COM_options.Font = new Font("Segoe UI", 13.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            COM_options.FormattingEnabled = true;
+            COM_options.Location = new Point(354, 55);
+            COM_options.Name = "COM_options";
+            COM_options.Size = new Size(92, 39);
+            COM_options.TabIndex = 31;
+            COM_options.Visible = false;
             // 
             // Form1
             // 
@@ -339,6 +373,9 @@
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.AppWorkspace;
             ClientSize = new Size(596, 194);
+            Controls.Add(COM_options);
+            Controls.Add(OnAirLights_checkbox);
+            Controls.Add(label3);
             Controls.Add(Cart8);
             Controls.Add(Cart7);
             Controls.Add(Cart6);
@@ -401,5 +438,8 @@
         private CheckBox Cart6;
         private CheckBox Cart7;
         private CheckBox Cart8;
+        private CheckBox OnAirLights_checkbox;
+        private Label label3;
+        private ComboBox COM_options;
     }
 }

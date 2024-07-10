@@ -7,6 +7,9 @@ import time
 from collections import deque
 from queue import Queue
 from pynput.keyboard import Key, Controller
+import serial
+from serial.serialutil import SerialException
+
 
 # Define the mapping of GPIO hex values to fader button IDs and actions
 gpio_to_fader_button_map = {
@@ -194,12 +197,26 @@ def process_nrpn_messages(nrpn_cache, message):
         return nrpn_number, data_value
     return None
 
-def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, DHD_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func, dhd_device, delay=0.0001):
+def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, DHD_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func, dhd_device, On_air_lights_enabled,ser,delay=0.0001):
     message_queue = deque()
     last_send_time = time.time()
     nrpn_cache = {}
     message_buffer = deque(maxlen=10)
+    
+    def handle_on_air_lights(On_air_lights_enabled, button_id, action, ser):
 
+        if On_air_lights_enabled == "True" and button_id == 1:
+            try:            
+                if action.lower() == 'toggle_on':
+                    print("Light ON!")
+                    ser.write((b'1'))
+                elif action.lower() == 'toggle_off':
+                    print("Light OFF!")
+                    ser.write((b'0'))
+                        
+            except SerialException as e:
+                print(f"An error occurred: {e}")
+                
     def handle_special_message(button_id):
         for Cart_Stack_number, allocated_button in Radio_Assist_Faders_Location.items():
             if allocated_button == button_id:
@@ -314,6 +331,9 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                         if all(any(str(msg) == s for msg in message_buffer) for s in steps_list):
                                             print(f"Complete sequence matches for button {button_id}, action {action}")
                                             special_message_result = handle_special_message(button_id)
+                                            if On_air_lights_enabled == "True":
+                                                
+                                                handle_on_air_lights(On_air_lights_enabled, button_id, action, ser)
                                             if special_message_result and DHD_enabled:
                                                 trigger_key_press_id(special_message_result)
                                             else:
@@ -330,6 +350,8 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                     elif str(message) == step[device]:
                                         print(f"Message {message} matches step_map for button {button_id}, action {action}")
                                         special_message_result = handle_special_message(button_id)
+                                        if On_air_lights_enabled == "True":
+                                            handle_on_air_lights(On_air_lights_enabled, button_id, action, ser)
                                         if special_message_result and DHD_enabled:
                                             trigger_key_press_id(special_message_result)
                                         else:
@@ -516,7 +538,7 @@ def listen_to_stdin(dhd_device_config, step_map, stdin_queue_device1, stdin_queu
         sys.stdout.flush()
 
 def main():
-    if len(sys.argv) != 6:
+    if len(sys.argv) != 8:
         print(len(sys.argv))
         print("Usage: MIDI_mirror.py <device1> <device2> <dhd_enabled> <dhd_device>")
         sys.exit(1)
@@ -526,6 +548,10 @@ def main():
     dhd_enabled = sys.argv[3] == 'True'
     dhd_device = sys.argv[4]
     GPIO_fader_position = sys.argv[5]
+    On_air_lights_enabled = sys.argv[6]
+    COM_port = sys.argv[7]
+    print("On Air Light Enabled", On_air_lights_enabled)
+    
 
     Radio_Assist_Faders_Location = {}
     
@@ -579,6 +605,12 @@ def main():
     stdin_queue_device1 = Queue()
     stdin_queue_device2 = Queue()
 
+    if On_air_lights_enabled == "True":
+        ser = serial.Serial(COM_port, 9600, timeout=1)
+        print(f"Serial port {COM_port} opened.")
+    else:
+        ser = ""
+        
     if dhd_enabled:
         stdin_thread = threading.Thread(target=listen_to_stdin, args=(dhd_config, step_map, stdin_queue_device1, stdin_queue_device2, dhd_device, Radio_Assist_Faders_Location))
         stdin_thread.start()
@@ -587,11 +619,11 @@ def main():
 
     threading.Thread(target=mirror_midi, args=(
         "device1", device1_config['midi_in_name'], device2_config['midi_out_name'], 
-        {device1_config['channel']: device2_config['channel']}, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, dhd_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func1, dhd_device)).start()
+        {device1_config['channel']: device2_config['channel']}, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, dhd_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func1, dhd_device,On_air_lights_enabled,ser)).start()
 
     threading.Thread(target=mirror_midi, args=(
         "device2", device2_config['midi_in_name'], device1_config['midi_out_name'], 
-        {device2_config['channel']: device1_config['channel']}, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, dhd_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func2, dhd_device)).start()
+        {device2_config['channel']: device1_config['channel']}, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, dhd_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func2, dhd_device,On_air_lights_enabled,ser)).start()
 
 if __name__ == "__main__":
     main()
