@@ -60,6 +60,8 @@
             label3 = new Label();
             COM_options = new ComboBox();
             SingleMixingDesk_label = new Label();
+            Debug_label = new Label();
+            Debug_checkbox = new CheckBox();
             SuspendLayout();
             // 
             // label1
@@ -378,12 +380,32 @@
             SingleMixingDesk_label.Text = "Single Mixing Desk";
             SingleMixingDesk_label.Visible = false;
             // 
+            // Debug_label
+            // 
+            Debug_label.AutoSize = true;
+            Debug_label.Location = new Point(490, 97);
+            Debug_label.Name = "Debug_label";
+            Debug_label.Size = new Size(54, 20);
+            Debug_label.TabIndex = 33;
+            Debug_label.Text = "Debug";
+            // 
+            // Debug_checkbox
+            // 
+            Debug_checkbox.AutoSize = true;
+            Debug_checkbox.Location = new Point(546, 101);
+            Debug_checkbox.Name = "Debug_checkbox";
+            Debug_checkbox.Size = new Size(18, 17);
+            Debug_checkbox.TabIndex = 34;
+            Debug_checkbox.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.AppWorkspace;
             ClientSize = new Size(596, 210);
+            Controls.Add(Debug_checkbox);
+            Controls.Add(Debug_label);
             Controls.Add(SingleMixingDesk_label);
             Controls.Add(COM_options);
             Controls.Add(OnAirLights_checkbox);
@@ -454,5 +476,7 @@
         private Label label3;
         private ComboBox COM_options;
         private Label SingleMixingDesk_label;
+        private Label Debug_label;
+        private CheckBox Debug_checkbox;
     }
 }

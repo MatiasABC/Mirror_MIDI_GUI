@@ -7,7 +7,6 @@ using System.Drawing;
 using System.Collections.Generic;
 using System.IO.Ports;
 
-
 namespace Mirror_MIDI
 {
     public partial class Form1 : Form
@@ -30,6 +29,11 @@ namespace Mirror_MIDI
 
             // Add CheckedChanged event handlers for checkboxes
             AddCheckBoxEventHandlers();
+
+            // Add SelectedIndexChanged event handlers for ComboBoxes
+            Device1.SelectedIndexChanged += Device1_SelectedIndexChanged;
+            Device2.SelectedIndexChanged += Device2_SelectedIndexChanged;
+            DHD_Device.SelectedIndexChanged += DHD_Device_SelectedIndexChanged;
         }
 
         private void AddCheckBoxEventHandlers()
@@ -127,35 +131,32 @@ namespace Mirror_MIDI
 
         private void Start_Click(object sender, EventArgs e)
         {
-            if (Device1.SelectedItem == null || Device2.SelectedItem == null)
+            if ((Device1.SelectedItem == null || Device2.SelectedItem == null) && !DHD_Enabled.Checked)
             {
                 MessageBox.Show("Both devices must be selected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-
-            if (Device1.SelectedItem.ToString() == Device2.SelectedItem.ToString())
+            if (Device1.SelectedItem != null && Device2.SelectedItem != null)
             {
-                MessageBox.Show("Both devices cannot be the same.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+                if (Device1.SelectedItem.ToString() == Device2.SelectedItem.ToString())
+                {
+                    MessageBox.Show("Both devices cannot be the same.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
             }
 
             if (DHD_Enabled.Checked)
             {
-                if (DHD_Device.SelectedItem == null)
-                {
-                    MessageBox.Show("DHD device must be selected when DHD is enabled.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
 
                 if (DHD_Status.Text != " Connected")
                 {
-                    MessageBox.Show("Please wait for DHD connection to be established.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Please wait for RadioAssist connection to be established.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
                 if (selectedCheckBoxes.Count == 0)
                 {
-                    MessageBox.Show("At least one checkbox must be selected when DHD is enabled.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("At least one checkbox must be selected when RadioAssist is enabled.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
@@ -168,14 +169,40 @@ namespace Mirror_MIDI
             Start.Enabled = false;
             OnAirLights_checkbox.Enabled = false;
             COM_options.Enabled = false;
+            Cart1.Enabled = false;
+            Cart2.Enabled = false;
+            Cart3.Enabled = false;
+            Cart4.Enabled = false;
+            Cart5.Enabled = false;
+            Cart6.Enabled = false;
+            Cart7.Enabled = false;
+            Cart8.Enabled = false;
 
+            string device1_selection;
+            string device2_selection;
             string dhdEnabled = DHD_Enabled.Checked ? "True" : "False";
             string OnAirLights = OnAirLights_checkbox.Checked ? "True" : "False";
             string COM = COM_options.SelectedItem?.ToString() ?? "None";
             string dhdDeviceSelection = DHD_Device.SelectedItem?.ToString() ?? "None";
             Dictionary<int, int> selectedButtonsDict = GetSelectedCheckBoxesDictionary();
+            if (Device1.SelectedItem == null)
+            {
+                device1_selection = "None";
+            }
+            else
+            {
+                device1_selection = Device1.SelectedItem.ToString();
+            }
+            if (Device2.SelectedItem == null)
+            {
+                device2_selection = "None";
+            }
+            else
+            {
+                device2_selection = Device2.SelectedItem.ToString();
+            }
 
-            StartPythonScript(Device1.SelectedItem.ToString(), Device2.SelectedItem.ToString(), dhdEnabled, dhdDeviceSelection, selectedButtonsDict, OnAirLights, COM);
+            StartPythonScript(device1_selection, device2_selection, dhdEnabled, dhdDeviceSelection, selectedButtonsDict, OnAirLights, COM);
 
         }
 
@@ -190,6 +217,14 @@ namespace Mirror_MIDI
             Start.Enabled = true;
             OnAirLights_checkbox.Enabled = true;
             COM_options.Enabled = true;
+            Cart1.Enabled = true;
+            Cart2.Enabled = true;
+            Cart3.Enabled = true;
+            Cart4.Enabled = true;
+            Cart5.Enabled = true;
+            Cart6.Enabled = true;
+            Cart7.Enabled = true;
+            Cart8.Enabled = true;
         }
 
         private void StartPythonScript(string device1, string device2, string dhdEnabled, string dhdDevice, Dictionary<int, int> selectedButtonsDict, string OnAirLights, string COM)
@@ -262,6 +297,7 @@ namespace Mirror_MIDI
         private string GetPythonScriptPath(string scriptName)
         {
             string exeDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            //TODO: Change the path to the scripts folder
             string scriptPath = Path.Combine(exeDirectory, "..", "..", "..", "scripts", scriptName);
             scriptPath = Path.GetFullPath(scriptPath);
             return scriptPath;
@@ -370,6 +406,31 @@ namespace Mirror_MIDI
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
             COM_options.Visible = OnAirLights_checkbox.Checked;
+        }
+
+        private void Device1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (Device1.SelectedItem != null)
+            {
+                DHD_Device.SelectedIndex = -1;
+            }
+        }
+
+        private void Device2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (Device2.SelectedItem != null)
+            {
+                DHD_Device.SelectedIndex = -1;
+            }
+        }
+
+        private void DHD_Device_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (DHD_Device.SelectedItem != null)
+            {
+                Device1.SelectedIndex = -1;
+                Device2.SelectedIndex = -1;
+            }
         }
     }
 }

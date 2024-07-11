@@ -197,7 +197,7 @@ def process_nrpn_messages(nrpn_cache, message):
         return nrpn_number, data_value
     return None
 
-def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, DHD_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func, dhd_device, On_air_lights_enabled,ser,delay=0.0001):
+def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, DHD_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func, On_air_lights_enabled,ser,delay=0.0001):
     message_queue = deque()
     last_send_time = time.time()
     nrpn_cache = {}
@@ -549,81 +549,87 @@ def main():
     dhd_device = sys.argv[4]
     GPIO_fader_position = sys.argv[5]
     On_air_lights_enabled = sys.argv[6]
-    COM_port = sys.argv[7]
-    print("On Air Light Enabled", On_air_lights_enabled)
-    
+    COM_port = sys.argv[7]    
 
     Radio_Assist_Faders_Location = {}
+    step_map = {}
     
-    device1_config = read_xml_config(f"{device1}.xml")
-    device2_config = read_xml_config(f"{device2}.xml")
-
-    if device1_config is None or device2_config is None:
-        print("Error: Unable to read configuration files.")
-        sys.exit(1)
-
-    device1_config = parse_config(device1_config)
-    device2_config = parse_config(device2_config)
-
-    if dhd_device != "None":
-        Radio_Assist_Faders_Location = convert_to_dict(GPIO_fader_position)
-        if dhd_device == device1:
-            dhd_config = device1_config
-        elif dhd_device == device2:
-            dhd_config = device2_config
-        else:
-            dhd_config = read_xml_config(f"{dhd_device}.xml")
-            if dhd_config is None:
-                print(f"Error: Unable to read DHD device configuration file '{dhd_device}.xml'.")
-                sys.exit(1)
-            dhd_config = parse_config(dhd_config)
-
-    available_inputs = mido.get_input_names()
-    available_outputs = mido.get_output_names()
-
-    if device1_config['midi_in_name'] not in available_inputs:
-        print(f"Error: Input device '{device1_config['midi_in_name']}' for device1 not found.")
-        raise Exception(f"Error: {device1_config['midi_in_name']} device not found. Available Inputs are: {available_inputs}. Please check configuration file.")
-        sys.exit(1)
-    if device1_config['midi_out_name'] not in available_outputs:
-        print(f"Error: Output device '{device1_config['midi_out_name']}' for device1 not found.")
-        raise Exception(f"Error: {device1_config['midi_out_name']} device not found. Available Outputs are: {available_outputs}. Please check configuration file.")  
-        sys.exit(1)
-    if device2_config['midi_in_name'] not in available_inputs:
-        print(f"Error: Input device '{device2_config['midi_in_name']}' for device2 not found.")
-        raise Exception(f"Error: {device2_config['midi_in_name']} device not found. Available Inputs are: {available_inputs}. Please check configuration file.")
-        sys.exit(1)
-    if device2_config['midi_out_name'] not in available_outputs:
-        print(f"Error: Output device '{device2_config['midi_out_name']}' for device2 not found.")
-        raise Exception(f"Error: {device2_config['midi_out_name']} device not found. Available Outputs are: {available_outputs}. Please check configuration file.")        
-        sys.exit(1)
-
-    cc_to_cc_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device1, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map = build_fader_mappings(device1_config, device2_config)
-    step_map = build_toggle_mappings(device1_config, device2_config)
-    convert_func1, convert_func2 = get_conversion_function(device1_config, device2_config)
-
-    stdin_queue_device1 = Queue()
-    stdin_queue_device2 = Queue()
-
     if On_air_lights_enabled == "True":
         ser = serial.Serial(COM_port, 9600, timeout=1)
         print(f"Serial port {COM_port} opened.")
     else:
         ser = ""
+
+    if dhd_device != "None":
+        dhd_config = read_xml_config(f"{dhd_device}.xml")
+        dhd_config = parse_config(dhd_config)
         
-    if dhd_enabled:
-        stdin_thread = threading.Thread(target=listen_to_stdin, args=(step_map, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location))
-        stdin_thread.start()
+        available_inputs = mido.get_input_names()
+        available_outputs = mido.get_output_names()
+        
+        if dhd_config['midi_in_name'] not in available_inputs:
+            print(f"Error: Input device '{dhd_config['midi_in_name']}' for device1 not found.")
+            raise Exception(f"Error: {dhd_config['midi_in_name']} device not found. Available Inputs are: {available_inputs}. Please check configuration file.")
+            sys.exit(1)
+        if dhd_config['midi_out_name'] not in available_outputs:
+            print(f"Error: Output device '{dhd_config['midi_out_name']}' for device1 not found.")
+            raise Exception(f"Error: {dhd_config['midi_out_name']} device not found. Available Outputs are: {available_outputs}. Please check configuration file.")  
+            sys.exit(1)
 
-        print("DHD is enabled. Listening for updates...")
 
-    threading.Thread(target=mirror_midi, args=(
+    if device1 != "None" and device2 != "None":
+        device1_config = read_xml_config(f"{device1}.xml")
+        device2_config = read_xml_config(f"{device2}.xml")
+        device1_config = parse_config(device1_config)
+        device2_config = parse_config(device2_config)     
+        
+        available_inputs = mido.get_input_names()
+        available_outputs = mido.get_output_names()
+
+        if device1_config['midi_in_name'] not in available_inputs:
+            print(f"Error: Input device '{device1_config['midi_in_name']}' for device1 not found.")
+            raise Exception(f"Error: {device1_config['midi_in_name']} device not found. Available Inputs are: {available_inputs}. Please check configuration file.")
+            sys.exit(1)
+        if device1_config['midi_out_name'] not in available_outputs:
+            print(f"Error: Output device '{device1_config['midi_out_name']}' for device1 not found.")
+            raise Exception(f"Error: {device1_config['midi_out_name']} device not found. Available Outputs are: {available_outputs}. Please check configuration file.")  
+            sys.exit(1)
+        if device2_config['midi_in_name'] not in available_inputs:
+            print(f"Error: Input device '{device2_config['midi_in_name']}' for device2 not found.")
+            raise Exception(f"Error: {device2_config['midi_in_name']} device not found. Available Inputs are: {available_inputs}. Please check configuration file.")
+            sys.exit(1)
+        if device2_config['midi_out_name'] not in available_outputs:
+            print(f"Error: Output device '{device2_config['midi_out_name']}' for device2 not found.")
+            raise Exception(f"Error: {device2_config['midi_out_name']} device not found. Available Outputs are: {available_outputs}. Please check configuration file.")        
+            sys.exit(1)
+
+        cc_to_cc_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device1, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map = build_fader_mappings(device1_config, device2_config)
+        step_map = build_toggle_mappings(device1_config, device2_config)
+        convert_func1, convert_func2 = get_conversion_function(device1_config, device2_config)
+        
+        threading.Thread(target=mirror_midi, args=(
         "device1", device1_config['midi_in_name'], device2_config['midi_out_name'], 
-        {device1_config['channel']: device2_config['channel']}, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, dhd_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func1, dhd_device,On_air_lights_enabled,ser)).start()
+        {device1_config['channel']: device2_config['channel']}, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, dhd_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func1, On_air_lights_enabled,ser)).start()
 
-    threading.Thread(target=mirror_midi, args=(
+        threading.Thread(target=mirror_midi, args=(
         "device2", device2_config['midi_in_name'], device1_config['midi_out_name'], 
-        {device2_config['channel']: device1_config['channel']}, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, dhd_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func2, dhd_device,On_air_lights_enabled,ser)).start()
+        {device2_config['channel']: device1_config['channel']}, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, dhd_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func2, On_air_lights_enabled,ser)).start()
+        
+        if dhd_enabled:
+            Radio_Assist_Faders_Location = convert_to_dict(GPIO_fader_position)
+            stdin_thread = threading.Thread(target=listen_to_stdin, args=(step_map, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location))
+            stdin_thread.start()
+            print("DHD is enabled. Listening for updates...")
 
+
+
+
+    stdin_queue_device1 = Queue()
+    stdin_queue_device2 = Queue()
+
+
+        
+
+        
 if __name__ == "__main__":
     main()
