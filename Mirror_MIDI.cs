@@ -317,7 +317,7 @@ namespace Mirror_MIDI
         {
             string exeDirectory = AppDomain.CurrentDomain.BaseDirectory;
             //TODO: Change the path to the scripts folder
-            string scriptPath = Path.Combine(exeDirectory, "..", "..", "..", "scripts", scriptName);
+            string scriptPath = Path.Combine(exeDirectory, "scripts", scriptName);
             scriptPath = Path.GetFullPath(scriptPath);
             return scriptPath;
         }
