@@ -19,4 +19,4 @@ with serial.Serial('COM8', 9600, timeout=1) as ser:
         # Send data '0' to turn the pin off
         send_data('0', 'COM8',ser)
         time.sleep(2)
-        a
+        

@@ -197,6 +197,135 @@ def process_nrpn_messages(nrpn_cache, message):
         return nrpn_number, data_value
     return None
 
+def radio_assist_midi(device, input_device_name, output_device_name, step_map, DHD_enabled, stdin_queue_device, Radio_Assist_Faders_Location, On_air_lights_enabled, ser, delay=0.0001):
+    message_queue = deque()
+    message_buffer = deque(maxlen=10)
+
+    def handle_on_air_lights(On_air_lights_enabled, button_id, action, ser):
+        if On_air_lights_enabled == "True" and button_id == 1:
+            try:
+                if action.lower() == 'toggle_on':
+                    print("Light ON!")
+                    ser.write(b'1')
+                elif action.lower() == 'toggle_off':
+                    print("Light OFF!")
+                    ser.write(b'0')
+            except SerialException as e:
+                print(f"An error occurred: {e}")
+                
+
+    def handle_special_message(button_id):
+        for Cart_Stack_number, allocated_button in Radio_Assist_Faders_Location.items():
+            if allocated_button == button_id:
+                print(f"Special message detected for button {button_id}")
+                return Cart_Stack_number
+        return None
+
+    def send_messages():
+        while message_queue:
+            msg = message_queue.popleft()
+            outport.send(msg)
+
+    def process_stdin_messages():
+        try:
+            while True:
+                step, device_in_queue = stdin_queue_device.get()
+                try:
+                    if " AND " in step:
+                        steps_list = step.split(" AND ")
+                        for s in steps_list:
+                            message = mido.Message.from_str(s)
+                            message_queue.append(message)
+                            print("sending message:", message)
+                    else:
+                        message = mido.Message.from_str(step)
+                        message_queue.append(message)
+                        print("sending message:", message)
+                    send_messages()
+                    print("output device", output_device_name)
+                except Exception as e:
+                    print(f"Error converting message from string for {device_in_queue}: {e}")
+                finally:
+                    stdin_queue_device.task_done()
+        except Exception as e:
+            print(f"Error processing stdin messages: {e}")
+
+    with mido.open_input(input_device_name) as inport, mido.open_output(output_device_name) as outport:
+        print(f"Processing MIDI for {input_device_name} to {output_device_name}...")
+
+        stdin_thread = threading.Thread(target=process_stdin_messages)
+        stdin_thread.start()
+
+        while True:
+            if DHD_enabled:
+                stdin_queue_device.join()
+
+            messages = list(inport.iter_pending())
+            if messages:
+                for message in messages:
+                    message_buffer.append(message)
+
+                    for button_id, actions in step_map.items():
+                        for action, steps in actions.items():
+                            for step in steps:
+                                
+                                if " AND " in step[device]:
+                                    steps_list = step[device].split(" AND ")
+                                    if all(any(str(msg) == s for msg in message_buffer) for s in steps_list):
+                                        print(f"Complete sequence matches for button {button_id}, action {action}")
+                                        special_message_result = handle_special_message(button_id)
+                                        if On_air_lights_enabled == "True":
+                                            handle_on_air_lights(On_air_lights_enabled, button_id, action, ser)
+                                        if special_message_result and DHD_enabled:
+                                            trigger_key_press_id(special_message_result)
+                                        message_buffer.clear()
+                                        break
+                                elif str(message) == step[device]:
+                                    print(f"Message {message} matches step_map for button {button_id}, action {action}")
+                                    special_message_result = handle_special_message(button_id)
+                                    if On_air_lights_enabled == "True":
+                                        handle_on_air_lights(On_air_lights_enabled, button_id, action, ser)
+                                    if special_message_result and DHD_enabled:
+                                        trigger_key_press_id(special_message_result)
+                                    message_buffer.clear()
+                                    break
+
+                send_messages()
+
+            time.sleep(0.001)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, DHD_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func, On_air_lights_enabled,ser,delay=0.0001):
     message_queue = deque()
     last_send_time = time.time()
@@ -216,6 +345,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                         
             except SerialException as e:
                 print(f"An error occurred: {e}")
+                
                 
     def handle_special_message(button_id):
         for Cart_Stack_number, allocated_button in Radio_Assist_Faders_Location.items():
@@ -296,7 +426,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
             messages = list(inport.iter_pending())
             if messages:
                 for message in messages:
-                    #print(f"Received MIDI message: {message}")
+                    print(f"Received MIDI message: {message}")
                     message_buffer.append(message)
 
                     converted_message = None
@@ -331,6 +461,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                         if all(any(str(msg) == s for msg in message_buffer) for s in steps_list):
                                             print(f"Complete sequence matches for button {button_id}, action {action}")
                                             special_message_result = handle_special_message(button_id)
+                                            print("special message", special_message_result)
                                             if On_air_lights_enabled == "True":
                                                 
                                                 handle_on_air_lights(On_air_lights_enabled, button_id, action, ser)
@@ -349,6 +480,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                             break
                                     elif str(message) == step[device]:
                                         print(f"Message {message} matches step_map for button {button_id}, action {action}")
+                                        print("special message", special_message_result)
                                         special_message_result = handle_special_message(button_id)
                                         if On_air_lights_enabled == "True":
                                             handle_on_air_lights(On_air_lights_enabled, button_id, action, ser)
@@ -487,6 +619,30 @@ def build_toggle_mappings(device1_config, device2_config):
 
     return steps_button_map
 
+
+
+def build_toggle_mappings_single_device(device_config):
+    steps_button_map = {}
+
+    for button_id, button in device_config['fader_buttons'].items():
+        steps_button_map[button_id] = {
+            'toggle_on': [],
+            'toggle_off': []
+        }
+
+        for step in button['toggle_on']:
+            steps_button_map[button_id]['toggle_on'].append({
+                'device': step
+            })
+
+        for step in button['toggle_off']:
+            steps_button_map[button_id]['toggle_off'].append({
+                'device': step
+            })
+
+    return steps_button_map
+
+
 def get_conversion_function(config1, config2):
     config1_types = set(fader['type'] for fader in config1['faders'].values())
     config2_types = set(fader['type'] for fader in config2['faders'].values())
@@ -510,7 +666,7 @@ def convert_to_dict(s):
         result[int(key)] = int(value)
     return result
 
-def listen_to_stdin(step_map, stdin_queue_device1, stdin_queue_device2,Radio_Assist_Faders_Location):
+def listen_to_stdin_mirror(step_map, stdin_queue_device1, stdin_queue_device2,Radio_Assist_Faders_Location):
     try:
         for line in sys.stdin:
             if line.strip():
@@ -536,11 +692,32 @@ def listen_to_stdin(step_map, stdin_queue_device1, stdin_queue_device2,Radio_Ass
     except Exception as e:
         print(f"Exception: {e}")
         sys.stdout.flush()
+        
+def listen_to_stdin_single(single_steps,stdin_queue_device,Radio_Assist_Faders_Location):
+    try:
+        for line in sys.stdin:
+            if line.strip():
+                print(f"Received from C#: {line.strip()}")
+                sys.stdout.flush()
+
+                hex_action = line.strip()
+                if hex_action in gpio_to_fader_button_map:
+                    Cart_stack_triggered, action = gpio_to_fader_button_map[hex_action]
+                    steps = single_steps[Radio_Assist_Faders_Location[Cart_stack_triggered]]
+                    for step in steps[action]:
+                        stdin_queue_device.put((step["device"], "device"))
+                        print("put in queue", step["device"])
+                else:
+                    print(f"Unknown or malformed action received: {line.strip()}")
+            else:
+                print("Received an empty line")
+                sys.stdout.flush()
+    except Exception as e:
+        print(f"Exception: {e}")
+        sys.stdout.flush()
 
 def main():
     if len(sys.argv) != 8:
-        print(len(sys.argv))
-        print("Usage: MIDI_mirror.py <device1> <device2> <dhd_enabled> <dhd_device>")
         sys.exit(1)
 
     device1 = sys.argv[1]
@@ -554,9 +731,16 @@ def main():
     Radio_Assist_Faders_Location = {}
     step_map = {}
     
+    stdin_queue_device1 = Queue()
+    stdin_queue_device2 = Queue()
+    stdin_queue_single  = Queue()
+    
     if On_air_lights_enabled == "True":
-        ser = serial.Serial(COM_port, 9600, timeout=1)
-        print(f"Serial port {COM_port} opened.")
+        try:
+            ser = serial.Serial(COM_port, 9600, timeout=1)
+            print(f"Serial port {COM_port} opened.")
+        except SerialException as e:
+            raise Exception(f"Error: Cannot find port: {e}")
     else:
         ser = ""
 
@@ -566,7 +750,7 @@ def main():
         
         available_inputs = mido.get_input_names()
         available_outputs = mido.get_output_names()
-        
+
         if dhd_config['midi_in_name'] not in available_inputs:
             print(f"Error: Input device '{dhd_config['midi_in_name']}' for device1 not found.")
             raise Exception(f"Error: {dhd_config['midi_in_name']} device not found. Available Inputs are: {available_inputs}. Please check configuration file.")
@@ -575,8 +759,23 @@ def main():
             print(f"Error: Output device '{dhd_config['midi_out_name']}' for device1 not found.")
             raise Exception(f"Error: {dhd_config['midi_out_name']} device not found. Available Outputs are: {available_outputs}. Please check configuration file.")  
             sys.exit(1)
+            
+        
+        Radio_Assist_Faders_Location = convert_to_dict(GPIO_fader_position)
+        single_mappings = build_toggle_mappings_single_device(dhd_config)
+        
+        stdin_thread = threading.Thread(target=listen_to_stdin_single, args=(single_mappings,stdin_queue_single, Radio_Assist_Faders_Location))
+        stdin_thread.start()
+        print("DHD is enabled. Listening for updates...")
+        
+        threading.Thread(target=radio_assist_midi, args=(
+        "device", dhd_config['midi_in_name'], dhd_config['midi_out_name'], single_mappings, dhd_enabled, stdin_queue_single, Radio_Assist_Faders_Location, On_air_lights_enabled,ser)).start()
 
 
+
+
+
+        #radio_assist_midi(device, input_device_name, output_device_name, step_map, DHD_enabled, stdin_queue_device, Radio_Assist_Faders_Location, On_air_lights_enabled, ser, delay=0.0001)
     if device1 != "None" and device2 != "None":
         device1_config = read_xml_config(f"{device1}.xml")
         device2_config = read_xml_config(f"{device2}.xml")
@@ -603,6 +802,9 @@ def main():
             raise Exception(f"Error: {device2_config['midi_out_name']} device not found. Available Outputs are: {available_outputs}. Please check configuration file.")        
             sys.exit(1)
 
+        Radio_Assist_Faders_Location = convert_to_dict(GPIO_fader_position)
+
+            
         cc_to_cc_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device1, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map = build_fader_mappings(device1_config, device2_config)
         step_map = build_toggle_mappings(device1_config, device2_config)
         convert_func1, convert_func2 = get_conversion_function(device1_config, device2_config)
@@ -615,17 +817,16 @@ def main():
         "device2", device2_config['midi_in_name'], device1_config['midi_out_name'], 
         {device2_config['channel']: device1_config['channel']}, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, dhd_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func2, On_air_lights_enabled,ser)).start()
         
-        if dhd_enabled:
-            Radio_Assist_Faders_Location = convert_to_dict(GPIO_fader_position)
-            stdin_thread = threading.Thread(target=listen_to_stdin, args=(step_map, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location))
+        if dhd_enabled:            
+            stdin_thread = threading.Thread(target=listen_to_stdin_mirror, args=(step_map, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location))
             stdin_thread.start()
             print("DHD is enabled. Listening for updates...")
 
 
 
 
-    stdin_queue_device1 = Queue()
-    stdin_queue_device2 = Queue()
+
+
 
 
         

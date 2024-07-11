@@ -159,7 +159,27 @@ namespace Mirror_MIDI
                     MessageBox.Show("At least one checkbox must be selected when RadioAssist is enabled.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
+                if (DHD_Device.SelectedItem == null && Device1.SelectedItem == null && Device2.SelectedItem == null)
+                {
+                    MessageBox.Show("A device must be selected when RadioAssist is enabled.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                if (DHD_Device.SelectedItem == null && Device1.SelectedItem != null && Device2.SelectedItem == null)
+                {
+                    MessageBox.Show("Both Devices must be selected when mirroring.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                if (DHD_Device.SelectedItem == null && Device1.SelectedItem == null && Device2.SelectedItem != null)
+                {
+                    MessageBox.Show("Both Devices must be selected when mirroring.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
 
+            if (COM_options.SelectedItem == null && OnAirLights_checkbox.Checked)
+            {
+                MessageBox.Show("A COM port must be selected when On Air Lights is enabled.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
 
             Device1.Enabled = false;
@@ -247,7 +267,7 @@ namespace Mirror_MIDI
                 RedirectStandardOutput = false,
                 RedirectStandardError = true,
                 RedirectStandardInput = true,
-                CreateNoWindow = false
+                CreateNoWindow = !Debug_checkbox.Checked
             };
 
             Debug.WriteLine($"\"{scriptPath}\" \"{device1}\" \"{device2}\" \"{dhdEnabled}\" \"{dhdDevice}\" \"{selectedButtonsArg}\" \"{OnAirLights}\" \"{COM}\"");
@@ -258,7 +278,6 @@ namespace Mirror_MIDI
             //pythonProcess.BeginOutputReadLine();
             pythonProcess.BeginErrorReadLine();
         }
-
 
         private void StopPythonScript()
         {

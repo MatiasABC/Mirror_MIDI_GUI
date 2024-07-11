@@ -383,7 +383,7 @@
             // Debug_label
             // 
             Debug_label.AutoSize = true;
-            Debug_label.Location = new Point(490, 97);
+            Debug_label.Location = new Point(522, 185);
             Debug_label.Name = "Debug_label";
             Debug_label.Size = new Size(54, 20);
             Debug_label.TabIndex = 33;
@@ -392,7 +392,7 @@
             // Debug_checkbox
             // 
             Debug_checkbox.AutoSize = true;
-            Debug_checkbox.Location = new Point(546, 101);
+            Debug_checkbox.Location = new Point(574, 189);
             Debug_checkbox.Name = "Debug_checkbox";
             Debug_checkbox.Size = new Size(18, 17);
             Debug_checkbox.TabIndex = 34;
