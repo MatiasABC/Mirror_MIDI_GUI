@@ -802,7 +802,8 @@ def main():
             raise Exception(f"Error: {device2_config['midi_out_name']} device not found. Available Outputs are: {available_outputs}. Please check configuration file.")        
             sys.exit(1)
 
-        Radio_Assist_Faders_Location = convert_to_dict(GPIO_fader_position)
+        if dhd_enabled:
+            Radio_Assist_Faders_Location = convert_to_dict(GPIO_fader_position)
 
             
         cc_to_cc_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device1, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map = build_fader_mappings(device1_config, device2_config)
@@ -817,7 +818,8 @@ def main():
         "device2", device2_config['midi_in_name'], device1_config['midi_out_name'], 
         {device2_config['channel']: device1_config['channel']}, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, dhd_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func2, On_air_lights_enabled,ser)).start()
         
-        if dhd_enabled:            
+        if dhd_enabled:
+            Radio_Assist_Faders_Location = convert_to_dict(GPIO_fader_position)
             stdin_thread = threading.Thread(target=listen_to_stdin_mirror, args=(step_map, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location))
             stdin_thread.start()
             print("DHD is enabled. Listening for updates...")

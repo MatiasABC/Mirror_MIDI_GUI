@@ -117,12 +117,12 @@ namespace Mirror_MIDI
             // Process each GPIO accordingly
             ProcessGPIO(messages, "2A", "GPIO 0");
             ProcessGPIO(messages, "2B", "GPIO 1");
-            ProcessGPIO(messages, "2D", "GPIO 2");
-            ProcessGPIO(messages, "2E", "GPIO 3");
+            ProcessGPIO(messages, "2C", "GPIO 2");
+            ProcessGPIO(messages, "2D", "GPIO 3");
         }
         private void ProcessGPIO(List<string> messages, string gpioCode, string gpioName)
         {
-            var gpioMessages = messages.Where(m => m.Contains($"03,00,11,0E,00,00,00,{gpioCode}")).ToList();
+            var gpioMessages = messages.Where(m => m.Contains($"03,00,11,0E,00,00,00,")).ToList();
 
             // Define the mapping for the GPIO to hex codes directly
             var gpio_to_hex_map = new Dictionary<string, string>
@@ -138,18 +138,16 @@ namespace Mirror_MIDI
         {"2E00", "2E00"},
         {"2E01", "2E01"}
     };
-
+            Debug.WriteLine("GPIO Message Count:");
+            Debug.WriteLine(gpioMessages.Count);
             // Check for GPIO ON
-            if (gpioMessages.Count == 1 && gpioMessages[0].EndsWith("00,00,00,00,00,00,00,00"))
+            if (gpioMessages.Count == 1 && gpioMessages[0].EndsWith(gpioCode+",01,00,00,00,00,00,00,00"))
             {
                 Debug.WriteLine($"{gpioName} ON");
                 onDataReceived?.Invoke(gpio_to_hex_map[gpioCode + "00"]);
             }
             // Check for GPIO OFF
-            else if (gpioMessages.Count == 3 &&
-                     gpioMessages[0].EndsWith("00,00,00,00,00,00,00,00") &&
-                     gpioMessages[1].EndsWith("01,00,00,00,00,00,00,00") &&
-                     gpioMessages[2].EndsWith("00,00,00,00,00,00,00,00"))
+            else if (gpioMessages.Count == 3 && gpioMessages[1].EndsWith(gpioCode+",01,00,00,00,00,00,00,00"))
             {
                 Debug.WriteLine($"{gpioName} OFF");
                 onDataReceived?.Invoke(gpio_to_hex_map[gpioCode + "01"]);
