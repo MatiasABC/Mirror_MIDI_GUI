@@ -88,39 +88,15 @@ def nrpn_to_nrpn(nrpn_number, data_value, input_channel, channel_map, nrpn_to_nr
             return None
     return None
 
-def cc_to_cc(cc_number, data_value, input_channel, channel_map, cc_to_cc_map, threshold=20, min_interval=0.5, max_interval=0.7):
-    if cc_number in cc_to_cc_map:
-        target_cc_number, default_output_channel = cc_to_cc_map[cc_number]
-        output_channel = channel_map.get(input_channel, default_output_channel)
+def cc_to_cc(cc_number, data_value, input_channel, channel_map, cc_to_cc_map):
+    if cc_number not in cc_to_cc_map:
+        return None
 
-        if not hasattr(cc_to_cc, 'last_values'):
-            cc_to_cc.last_values = {}
-        if not hasattr(cc_to_cc, 'last_times'):
-            cc_to_cc.last_times = {}
+    target_cc_number, default_output_channel = cc_to_cc_map[cc_number]
+    output_channel = channel_map.get(input_channel, default_output_channel)
 
-        key = (output_channel, target_cc_number)
-        current_time = time.time()
-
-        if key not in cc_to_cc.last_values:
-            cc_to_cc.last_values[key] = data_value
-            cc_to_cc.last_times[key] = current_time
-            return None
-
-        last_value = cc_to_cc.last_values[key]
-        last_time = cc_to_cc.last_times[key]
-
-        value_change = abs(data_value - last_value)
-        time_elapsed = current_time - last_time
-
-        if (value_change >= threshold or time_elapsed >= max_interval):
-            cc_to_cc.last_values[key] = data_value
-            cc_to_cc.last_times[key] = current_time
-
-            scaled_data_value = data_value & 0x7F
-            return mido.Message('control_change', control=target_cc_number, value=scaled_data_value, channel=output_channel)
-        elif time_elapsed < min_interval:
-            return None
-    return None
+    scaled_data_value = data_value & 0x7F
+    return mido.Message('control_change', control=target_cc_number, value=scaled_data_value, channel=output_channel)
 
 def cc_to_nrpn(cc_number, data_value, input_channel, channel_map, cc_to_nrpn_map):
     if not (0 <= data_value <= 127):
@@ -199,7 +175,7 @@ def process_nrpn_messages(nrpn_cache, message):
 
 def radio_assist_midi(device, input_device_name, output_device_name, step_map, DHD_enabled, stdin_queue_device, Radio_Assist_Faders_Location, On_air_lights_enabled, ser, delay=0.0001):
     message_queue = deque()
-    message_buffer = deque(maxlen=10)
+    message_buffer = deque(maxlen=4)
 
     def handle_on_air_lights(On_air_lights_enabled, button_id, action, ser):
         if On_air_lights_enabled == "True" and button_id == 1:
@@ -264,7 +240,7 @@ def radio_assist_midi(device, input_device_name, output_device_name, step_map, D
             if messages:
                 for message in messages:
                     message_buffer.append(message)
-
+                    
                     for button_id, actions in step_map.items():
                         for action, steps in actions.items():
                             for step in steps:
@@ -292,45 +268,12 @@ def radio_assist_midi(device, input_device_name, output_device_name, step_map, D
 
                 send_messages()
 
-            time.sleep(0.001)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            
 def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_to_cc_map_device1, nrpn_to_nrpn_map_device1, cc_to_cc_map_device2, nrpn_to_nrpn_map_device2, nrpn_to_cc_map, cc_to_nrpn_map, step_map, DHD_enabled, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location, convert_func, On_air_lights_enabled,ser,delay=0.0001):
     message_queue = deque()
     last_send_time = time.time()
     nrpn_cache = {}
-    message_buffer = deque(maxlen=10)
+    message_buffer = deque(maxlen=4)
     
     def handle_on_air_lights(On_air_lights_enabled, button_id, action, ser):
 
@@ -344,7 +287,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                     ser.write((b'0'))
                         
             except SerialException as e:
-                print(f"An error occurred: {e}")
+                print(f"An error occurred with the on Air Light: {e}")
                 
                 
     def handle_special_message(button_id):
@@ -448,6 +391,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                     if converted_message:
                         if isinstance(converted_message, list):
                             message_queue.extend(converted_message)
+                            message_buffer.clear()
                         else:
                             message_queue.append(converted_message)
                         continue
@@ -498,8 +442,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                         break
 
                 send_messages()
-
-            time.sleep(0.001)
+            
 
 def read_xml_config(file_name):
     configs_path = os.path.join(os.path.dirname(__file__), '..', 'configs', file_name)
@@ -823,16 +766,6 @@ def main():
             stdin_thread = threading.Thread(target=listen_to_stdin_mirror, args=(step_map, stdin_queue_device1, stdin_queue_device2, Radio_Assist_Faders_Location))
             stdin_thread.start()
             print("DHD is enabled. Listening for updates...")
-
-
-
-
-
-
-
-
-        
-
-        
+            
 if __name__ == "__main__":
     main()
