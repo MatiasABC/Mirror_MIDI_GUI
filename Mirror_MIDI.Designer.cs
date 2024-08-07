@@ -437,6 +437,7 @@
             Controls.Add(Stop);
             Controls.Add(Start);
             Controls.Add(label1);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Form1";
             Text = "Mirror MIDI";

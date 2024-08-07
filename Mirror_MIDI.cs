@@ -316,8 +316,16 @@ namespace Mirror_MIDI
         private string GetPythonScriptPath(string scriptName)
         {
             string exeDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            //TODO: Change the path to the scripts folder
-            string scriptPath = Path.Combine(exeDirectory, "scripts", scriptName);
+            string scriptPath;
+
+#if DEBUG
+            // If the build configuration is Debug, use this path
+            scriptPath = Path.Combine(exeDirectory, "..", "..", "..", "scripts", scriptName);
+#else
+    // If the build configuration is Release, use this path
+    scriptPath = Path.Combine(exeDirectory, "scripts", scriptName);
+#endif
+
             scriptPath = Path.GetFullPath(scriptPath);
             return scriptPath;
         }
