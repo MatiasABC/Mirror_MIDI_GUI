@@ -29,7 +29,7 @@ This application was written by Matias Villalba in 2024.
 
 License:
 --------
-This project is licensed under the MIT - see the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 """
 
