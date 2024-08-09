@@ -520,7 +520,7 @@ def radio_assist_midi(device, input_device_name, output_device_name, step_map, D
             # Read all pending MIDI messages from the input device.
             messages = list(inport.iter_pending())
             if messages:
-                for message in messages:
+                for message in messages:                    
                     message_buffer.append(message)
                     
                     # Iterate over the step map to match incoming messages with actions.
@@ -1276,7 +1276,7 @@ def main():
     GPIO_fader_position = sys.argv[5]
     On_air_lights_enabled = sys.argv[6]
     COM_port = sys.argv[7]    
-
+    
     # Initialize necessary variables and queues.
     Radio_Assist_Faders_Location = {}
     step_map = {}
@@ -1296,7 +1296,7 @@ def main():
         ser = ""
 
     # Load and configure DHD device if specified.
-    if dhd_device != "None":
+    if dhd_device != "None":        
         dhd_config = read_xml_config(f"{dhd_device}.xml")
         dhd_config = parse_config(dhd_config)
         
