@@ -1,0 +1,49 @@
+﻿<configuration>
+	<midi>
+		<midi_in_name>THREE FADERS 0</midi_in_name>
+		<midi_out_name>THREE FADERS 1</midi_out_name>
+		<channel>0</channel>
+	</midi>
+	<faders>
+		<fader id="1" type="control_change" value="1"/>
+		<fader id="2" type="control_change" value="11"/>
+		<fader id="3" type="control_change" value="21"/>
+
+	</faders>
+	<fader_buttons>
+		<fader_button id="1" type="toggle" value="1">
+			<toggle_on>None</toggle_on>
+			<toggle_off>None</toggle_off>
+		</fader_button>
+		<fader_button id="2" type="toggle" value="2">
+			<toggle_on>None</toggle_on>
+			<toggle_off>None</toggle_off>
+		</fader_button>
+		<fader_button id="3" type="toggle" value="3">
+			<toggle_on>None</toggle_on>
+			<toggle_off>None</toggle_off>
+		</fader_button>
+		<fader_button id="4" type="toggle" value="4">
+			<toggle_on>None</toggle_on>
+			<toggle_off>None</toggle_off>
+		</fader_button>
+		<fader_button id="5" type="toggle" value="5">
+			<toggle_on>None</toggle_on>
+			<toggle_off>None</toggle_off>
+		</fader_button>
+		<fader_button id="6" type="toggle" value="6">
+			<toggle_on>None</toggle_on>
+			<toggle_off>None</toggle_off>
+		</fader_button>
+		<fader_button id="7" type="toggle" value="7">
+			<toggle_on>None</toggle_on>
+			<toggle_off>None</toggle_off>
+		</fader_button>
+		<fader_button id="8" type="toggle" value="8">
+			<toggle_on>None</toggle_on>
+			<toggle_off>None</toggle_off>
+		</fader_button>
+
+
+	</fader_buttons>
+</configuration>

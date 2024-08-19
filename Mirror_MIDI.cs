@@ -103,8 +103,7 @@ namespace Mirror_MIDI
         private void PopulateDeviceLists()
         {
             string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            string configPath = Path.Combine(baseDirectory, "configs");
-
+            string configPath = Path.Combine(baseDirectory, "..", "..", "..", "configs");
             if (Directory.Exists(configPath))
             {
                 string[] configFiles = Directory.GetFiles(configPath);

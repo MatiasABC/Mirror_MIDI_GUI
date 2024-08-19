@@ -207,11 +207,12 @@ def cc_to_cc(cc_number, data_value, input_channel, channel_map, cc_to_cc_map):
 
     # Check if the incoming CC number is in the mapping table.
     if cc_number not in cc_to_cc_map:
+
         return None  # If not, return None to indicate no conversion is needed.
 
     # Retrieve the target CC number and the default output channel from the mapping.
     target_cc_number, default_output_channel = cc_to_cc_map[cc_number]
-    
+    print("default_output_channel", default_output_channel)
     # Determine the output channel based on the input channel, or use the default output channel.
     output_channel = channel_map.get(input_channel, default_output_channel)
 
@@ -726,9 +727,11 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                     converted_message = None
                     
                     # Handle Control Change (CC) messages and apply conversions if necessary.
-                    if message.type == 'control_change':
-                        if convert_func == cc_to_cc:
+                    if message.type == 'control_change':                        
+                        if convert_func == cc_to_cc and device == "device1":
                             converted_message = cc_to_cc(message.control, message.value, message.channel, channel_map, cc_to_cc_map_device1)
+                        if convert_func == cc_to_cc and device == "device2":
+                            converted_message = cc_to_cc(message.control, message.value, message.channel, channel_map, cc_to_cc_map_device2) 
                         elif convert_func == nrpn_to_nrpn and is_nrpn_control(message.control):
                             nrpn_data = process_nrpn_messages(nrpn_cache, message)
                             if nrpn_data:
@@ -758,7 +761,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                 for step in steps:
                                     if " AND " in step[device]:
                                         steps_list = step[device].split(" AND ")
-                                        if all(any(str(msg) == s for msg in message_buffer) for s in steps_list):
+                                        if all((str(msg) == s for msg in message_buffer) for s in steps_list):
                                             print(f"Complete sequence matches for button {button_id}, action {action}")
                                             special_message_result = handle_special_message(button_id)
                                             print("special message", special_message_result)

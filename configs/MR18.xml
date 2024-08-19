@@ -1,0 +1,48 @@
+﻿<configuration>
+	<midi>
+		<midi_in_name>MR18 MIDI IN 2</midi_in_name>
+		<midi_out_name>MR18 MIDI OUT 3</midi_out_name>
+		<channel>0</channel>
+	</midi>
+	<faders>
+		<fader id="1" type="control_change" value="0"/>
+
+
+	</faders>
+	<fader_buttons>
+		<fader_button id="1" type="toggle" value="1">
+			<toggle_on>control_change channel=1 control=0 value=127 time=0</toggle_on>
+			<toggle_off>control_change channel=1 control=0 value=0 time=0</toggle_off>
+		</fader_button>
+		<fader_button id="2" type="toggle" value="2">
+			<toggle_on>control_change channel=1 control=1 value=127 time=0</toggle_on>
+			<toggle_off>control_change channel=1 control=1 value=0 time=0</toggle_off>
+		</fader_button>
+		<fader_button id="3" type="toggle" value="3">
+			<toggle_on>control_change channel=1 control=2 value=127 time=0</toggle_on>
+			<toggle_off>control_change channel=1 control=2 value=0 time=0</toggle_off>
+		</fader_button>
+		<fader_button id="4" type="toggle" value="4">
+			<toggle_on>control_change channel=1 control=3 value=127 time=0</toggle_on>
+			<toggle_off>control_change channel=1 control=3 value=0 time=0</toggle_off>
+		</fader_button>
+		<fader_button id="5" type="toggle" value="5">
+			<toggle_on>control_change channel=1 control=4 value=127 time=0</toggle_on>
+			<toggle_off>control_change channel=1 control=4 value=0 time=0</toggle_off>
+		</fader_button>
+		<fader_button id="6" type="toggle" value="6">
+			<toggle_on>control_change channel=1 control=5 value=127 time=0</toggle_on>
+			<toggle_off>control_change channel=1 control=5 value=0 time=0</toggle_off>
+		</fader_button>
+		<fader_button id="7" type="toggle" value="7">
+			<toggle_on>control_change channel=1 control=6 value=127 time=0</toggle_on>
+			<toggle_off>control_change channel=1 control=6 value=0 time=0</toggle_off>
+		</fader_button>
+		<fader_button id="8" type="toggle" value="8">
+			<toggle_on>control_change channel=1 control=7 value=127 time=0</toggle_on>
+			<toggle_off>control_change channel=1 control=7 value=0 time=0</toggle_off>
+		</fader_button>
+
+
+	</fader_buttons>
+</configuration>

@@ -1,13 +1,13 @@
 ﻿<configuration>
 	<midi>
-		<midi_in_name>6- Yamaha DM3-1 0</midi_in_name>
-		<midi_out_name>6- Yamaha DM3-1 1</midi_out_name>
+		<midi_in_name>6- Yamaha DM3-1 1</midi_in_name>
+		<midi_out_name>6- Yamaha DM3-1 2</midi_out_name>
 		<channel>0</channel>
 	</midi>
 	<faders>
-		<fader id="1" type="control_change" value="9"/>
-
-
+		<fader id="1" type="control_change" value="1"/>
+		<fader id="2" type="control_change" value="2"/>
+		<fader id="3" type="control_change" value="3"/>
 
 	</faders>
 	<fader_buttons>
