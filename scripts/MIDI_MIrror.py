@@ -730,13 +730,19 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                     if message.type == 'control_change':                        
                         if convert_func == cc_to_cc and device == "device1":
                             converted_message = cc_to_cc(message.control, message.value, message.channel, channel_map, cc_to_cc_map_device1)
-                        if convert_func == cc_to_cc and device == "device2":
+                        elif convert_func == cc_to_cc and device == "device2":
                             converted_message = cc_to_cc(message.control, message.value, message.channel, channel_map, cc_to_cc_map_device2) 
-                        elif convert_func == nrpn_to_nrpn and is_nrpn_control(message.control):
+                        elif convert_func == nrpn_to_nrpn and is_nrpn_control(message.control) and device == 'device1':
                             nrpn_data = process_nrpn_messages(nrpn_cache, message)
                             if nrpn_data:
                                 nrpn_number, data_value = nrpn_data
                                 converted_message = nrpn_to_nrpn(nrpn_number, data_value, message.channel, channel_map, nrpn_to_nrpn_map_device1)
+                                
+                        elif convert_func == nrpn_to_nrpn and is_nrpn_control(message.control) and device == 'device2':
+                            nrpn_data = process_nrpn_messages(nrpn_cache, message)
+                            if nrpn_data:
+                                nrpn_number, data_value = nrpn_data
+                                converted_message = nrpn_to_nrpn(nrpn_number, data_value, message.channel, channel_map, nrpn_to_nrpn_map_device2)
                         elif convert_func == cc_to_nrpn:
                             converted_message = cc_to_nrpn(message.control, message.value, message.channel, channel_map, cc_to_nrpn_map)
                         elif convert_func == nrpn_to_cc and is_nrpn_control(message.control):
