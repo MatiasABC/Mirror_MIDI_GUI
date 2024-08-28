@@ -417,6 +417,7 @@ namespace Mirror_MIDI
                 }));
             }
         }
+        private bool popupShown = false; // Flag to ensure only one popup per error
 
         private void PythonProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
@@ -424,17 +425,118 @@ namespace Mirror_MIDI
             {
                 this.Invoke(new Action(() =>
                 {
-                    // Log the error to the debug console
                     Debug.WriteLine(e.Data, "Python Error");
 
-                    // Show a message box with the error information if it begins with "Exception"
-                    if (e.Data.StartsWith("Exception"))
+                    // Handling available inputs separately
+                    if (e.Data.Contains("Available Inputs") && !e.Data.Contains("{") && !e.Data.Contains("}"))
+
+                    {
+                        string[] availableInputs = ExtractListFromBrackets(e.Data);
+                        DisplayAvailableDevicesAsButtons("Configuration Error: Please check your input settings.", availableInputs);
+                    }
+                    // Handling available outputs separately
+                    else if (e.Data.Contains("Available Outputs") && !e.Data.Contains("{") && !e.Data.Contains("}"))
+                    {
+                        string[] availableOutputs = ExtractListFromBrackets(e.Data);
+                        DisplayAvailableDevicesAsButtons("Configuration Error: Please check your output settings.", availableOutputs);
+                    }
+                    else if (e.Data.StartsWith("Exception"))
                     {
                         MessageBox.Show(e.Data, "Python Script Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }));
             }
         }
+
+        // Function to extract the list from within square brackets
+        private string[] ExtractListFromBrackets(string data)
+        {
+            int startIndex = data.IndexOf('[');
+            int endIndex = data.IndexOf(']', startIndex);
+
+            if (startIndex != -1 && endIndex != -1)
+            {
+                // Extract the content within brackets
+                string listContent = data.Substring(startIndex + 1, endIndex - startIndex - 1);
+
+                // Split by comma, which separates the items in the list
+                string[] devices = listContent.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+
+                // Trim any surrounding whitespace from each device
+                for (int i = 0; i < devices.Length; i++)
+                {
+                    devices[i] = devices[i].Trim('\'', ' ');
+                }
+
+                return devices;
+            }
+            return new string[0];
+        }
+
+        // Function to display available devices as buttons with error information and a close button
+        private void DisplayAvailableDevicesAsButtons(string title, string[] availableDevices)
+        {
+            Form copyForm = new Form()
+            {
+                Text = "Configuration Error",
+                Width = 400,
+                Height = 400,
+                AutoScroll = true, // Ensure that form is scrollable if there are many buttons
+                StartPosition = FormStartPosition.CenterScreen
+            };
+
+            FlowLayoutPanel panel = new FlowLayoutPanel()
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true
+            };
+
+            // Add a label with the error information
+            Label errorLabel = new Label()
+            {
+                Text = title,
+                AutoSize = true,
+                ForeColor = Color.Red,
+                Font = new Font(SystemFonts.DefaultFont.FontFamily, 10, FontStyle.Bold),
+                Margin = new Padding(10)
+            };
+            panel.Controls.Add(errorLabel);
+
+            // Add the buttons for available devices
+            foreach (string device in availableDevices)
+            {
+                Button deviceButton = new Button()
+                {
+                    Text = device,
+                    AutoSize = true,
+                    Padding = new Padding(5),
+                    Margin = new Padding(3)
+                };
+
+                deviceButton.Click += (s, args) =>
+                {
+                    Clipboard.SetText(device);
+                    MessageBox.Show($"{device} copied to clipboard!", "Copied", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                };
+
+                panel.Controls.Add(deviceButton);
+            }
+
+            // Add a close button
+            Button closeButton = new Button()
+            {
+                Text = "Close",
+                AutoSize = true,
+                Padding = new Padding(5),
+                Margin = new Padding(10)
+            };
+            closeButton.Click += (s, args) => copyForm.Close();
+            panel.Controls.Add(closeButton);
+
+            copyForm.Controls.Add(panel);
+            copyForm.ShowDialog();
+        }
+
 
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
