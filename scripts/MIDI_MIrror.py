@@ -73,10 +73,10 @@ def trigger_key_press_id(id):
                   Valid IDs are from 1 to 4.
 
     Key Press Combinations:
-    - ID 1: Ctrl + Alt + F1
-    - ID 2: Ctrl + Alt + F2
-    - ID 3: Ctrl + Alt + F3
-    - ID 4: Ctrl + Alt + F4
+    - ID 1: Ctrl + Alt + [
+    - ID 2: Ctrl + Alt + ]
+    - ID 3: Ctrl + Alt + ;
+    - ID 4: Ctrl + Alt + '
 
     The function simulates pressing and releasing the keys in sequence. If an invalid
     ID is provided, the function prints an error message.
@@ -84,10 +84,10 @@ def trigger_key_press_id(id):
     
     # Define the key combinations for each fader button ID.
     Toggle_Key_presses = [
-        [Key.ctrl, Key.alt, Key.f1],  # ID 1
-        [Key.ctrl, Key.alt, Key.f2],  # ID 2
-        [Key.ctrl, Key.alt, Key.f3],  # ID 3
-        [Key.ctrl, Key.alt, Key.f4]   # ID 4
+        [Key.ctrl, Key.alt, '['],  # ID 1
+        [Key.ctrl, Key.alt, ']'],  # ID 2
+        [Key.ctrl, Key.alt, ';'],  # ID 3
+        [Key.ctrl, Key.alt, "'"]   # ID 4
     ]
     
     # Initialize a new keyboard controller instance.
@@ -212,7 +212,6 @@ def cc_to_cc(cc_number, data_value, input_channel, channel_map, cc_to_cc_map):
 
     # Retrieve the target CC number and the default output channel from the mapping.
     target_cc_number, default_output_channel = cc_to_cc_map[cc_number]
-    print("default_output_channel", default_output_channel)
     # Determine the output channel based on the input channel, or use the default output channel.
     output_channel = channel_map.get(input_channel, default_output_channel)
 
@@ -343,24 +342,35 @@ def nrpn_to_cc(nrpn_number, data_value, input_channel, channel_map, nrpn_to_cc_m
     # If the NRPN number is not in the mapping table, return None.
     return None
 
-
-def is_nrpn_control(control):
+def is_nrpn_control(control, prev_control=None):
     """
     Check if a given control number is part of the NRPN (Non-Registered Parameter Number) control set.
-    
+
     NRPN messages typically use the following control change numbers:
     - 98: NRPN LSB (Least Significant Byte)
     - 99: NRPN MSB (Most Significant Byte)
-    - 6: Data Entry MSB
-    - 38: Data Entry LSB
+    - 6: Data Entry MSB (only considered NRPN if preceded by 98 or 99)
+    - 38: Data Entry LSB (only considered NRPN if preceded by 98 or 99)
 
     Args:
         control (int): The control number to check.
+        prev_control (int, optional): The previous control number in the sequence to check 
+                                      if Data Entry controls (6 or 38) are part of an NRPN message.
 
     Returns:
         bool: True if the control number is part of the NRPN set, False otherwise.
     """
-    return control in [98, 99, 6, 38]
+    # NRPN LSB and MSB are always part of NRPN.
+    if control in [98, 99]:
+        return True
+
+    # Check if the control is a Data Entry MSB or LSB and was preceded by an NRPN message.
+    if control in [6, 38] and prev_control in [98, 99]:
+        return True
+
+    # Otherwise, it's not an NRPN control.
+    return False
+
 
 def process_nrpn_messages(nrpn_cache, message):
     """
@@ -699,11 +709,14 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
         except Exception as e:
             print(f"Error processing stdin messages: {e}")
 
+    # Initialize variable to store the previous MIDI message.
+    prev_message = None
+
     # Open MIDI input and output ports and start processing messages.
     with mido.open_input(input_device_name) as inport, mido.open_output(output_device_name) as outport:
         print(f"Mirroring MIDI from {input_device_name} to {output_device_name}...")
         opposite_device = "device1" if device == "device2" else "device2"
-        
+    
         # Start a separate thread to handle messages coming from the stdin queue of the opposite device.
         if device == "device1":
             stdin_thread = threading.Thread(target=process_stdin_messages_device2)
@@ -725,32 +738,40 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                     message_buffer.append(message)
 
                     converted_message = None
-                    
+                
                     # Handle Control Change (CC) messages and apply conversions if necessary.
-                    if message.type == 'control_change':                        
+                    if message.type == 'control_change':
+                        # Check if the current message is part of an NRPN sequence.
+                        is_nrpn = is_nrpn_control(message.control, prev_message.control if prev_message else None)
+
                         if convert_func == cc_to_cc and device == "device1":
                             converted_message = cc_to_cc(message.control, message.value, message.channel, channel_map, cc_to_cc_map_device1)
+                            send_messages()
+                            pass
+                        
                         elif convert_func == cc_to_cc and device == "device2":
                             converted_message = cc_to_cc(message.control, message.value, message.channel, channel_map, cc_to_cc_map_device2) 
-                        elif convert_func == nrpn_to_nrpn and is_nrpn_control(message.control) and device == 'device1':
+                            send_messages()
+                            pass
+                        elif convert_func == nrpn_to_nrpn and is_nrpn and device == 'device1':
                             nrpn_data = process_nrpn_messages(nrpn_cache, message)
                             if nrpn_data:
                                 nrpn_number, data_value = nrpn_data
                                 converted_message = nrpn_to_nrpn(nrpn_number, data_value, message.channel, channel_map, nrpn_to_nrpn_map_device1)
-                                
-                        elif convert_func == nrpn_to_nrpn and is_nrpn_control(message.control) and device == 'device2':
+                            
+                        elif convert_func == nrpn_to_nrpn and is_nrpn and device == 'device2':
                             nrpn_data = process_nrpn_messages(nrpn_cache, message)
                             if nrpn_data:
                                 nrpn_number, data_value = nrpn_data
                                 converted_message = nrpn_to_nrpn(nrpn_number, data_value, message.channel, channel_map, nrpn_to_nrpn_map_device2)
                         elif convert_func == cc_to_nrpn:
                             converted_message = cc_to_nrpn(message.control, message.value, message.channel, channel_map, cc_to_nrpn_map)
-                        elif convert_func == nrpn_to_cc and is_nrpn_control(message.control):
+                        elif convert_func == nrpn_to_cc and is_nrpn:
                             nrpn_data = process_nrpn_messages(nrpn_cache, message)
                             if nrpn_data:
                                 nrpn_number, data_value = nrpn_data
                                 converted_message = nrpn_to_cc(nrpn_number, data_value, message.channel, channel_map, nrpn_to_cc_map)
-                    
+                
                     # If a converted message exists, add it to the message queue.
                     if converted_message:
                         if isinstance(converted_message, list):
@@ -804,8 +825,12 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                         message_buffer.clear()
                                         break
 
+                    # Update the previous message to the current one after processing.
+                    prev_message = message
+
                 # Send all messages queued for output.
                 send_messages()
+
             
 
 def read_xml_config(file_name):
