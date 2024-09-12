@@ -731,16 +731,17 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                 stdin_queue_device2.join()
 
             # Read all pending MIDI messages from the input device.
-            messages = list(inport.iter_pending())
+            messages = (inport.iter_pending())
             if messages:
-                for message in messages:
+                for message in inport:
                     print(f"Received MIDI message: {message}")
                     message_buffer.append(message)
 
                     converted_message = None
                 
                     # Handle Control Change (CC) messages and apply conversions if necessary.
-                    if message.type == 'control_change':
+                    if message.type == 'control_change' and prev_message is not None and prev_message.type == 'control_change':
+                        #print(prev_message)
                         # Check if the current message is part of an NRPN sequence.
                         is_nrpn = is_nrpn_control(message.control, prev_message.control if prev_message else None)
 
@@ -820,6 +821,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                                     msg = mido.Message.from_str(step_msg)
                                                     message_queue.append(msg)
                                                     print(f"Appending mirrored step to queue for {opposite_device}: {msg}")
+                                                    send_messages()
                                                 except Exception as e:
                                                     print(f"Error converting mirrored step from string: {e}")
                                         message_buffer.clear()
