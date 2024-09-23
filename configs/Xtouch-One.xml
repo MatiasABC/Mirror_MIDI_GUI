@@ -47,10 +47,6 @@
 			<toggle_on>note_on channel=0 note=47 velocity=127 time=0</toggle_on>
 			<toggle_off>note_off channel=0 note=47 velocity=0 time=0</toggle_off>
 		</fader_button>
-		<fader_button id="9" type="toggle" value="48">
-			<toggle_on>note_on channel=0 note=32 velocity=127 time=0</toggle_on>
-			<toggle_off>note_off channel=0 note=32 velocity=0 time=0</toggle_off>
-		</fader_button>
 
 	</fader_buttons>
 </configuration>

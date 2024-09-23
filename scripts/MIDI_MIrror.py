@@ -272,12 +272,11 @@ def cc_to_nrpn(cc_number, data_value, input_channel, channel_map, cc_to_nrpn_map
     return None
 
 
-def nrpn_to_cc(nrpn_number, data_value, input_channel, channel_map, nrpn_to_cc_map, threshold=20, min_interval=0.5, max_interval=0.7):
+def nrpn_to_cc(nrpn_number, data_value, input_channel, channel_map, nrpn_to_cc_map):
     """
     Convert an incoming NRPN (Non-Registered Parameter Number) message to a Control Change (CC) message.
     
-    This function maps an NRPN number to a CC number and converts the data value accordingly. It applies optional
-    filtering based on value changes and timing to prevent sending excessive MIDI messages.
+    This function maps an NRPN number to a CC number and converts the data value accordingly.
 
     Args:
         nrpn_number (int): The incoming NRPN number to be converted.
@@ -285,12 +284,9 @@ def nrpn_to_cc(nrpn_number, data_value, input_channel, channel_map, nrpn_to_cc_m
         input_channel (int): The MIDI channel of the incoming NRPN message.
         channel_map (dict): A dictionary mapping input channels to output channels.
         nrpn_to_cc_map (dict): A mapping of incoming NRPN numbers to CC numbers and default output channels.
-        threshold (int, optional): The minimum change in data value required to trigger a new CC message. Default is 20.
-        min_interval (float, optional): The minimum time interval (in seconds) between successive CC messages for the same target. Default is 0.5 seconds.
-        max_interval (float, optional): The maximum time interval (in seconds) after which a CC message will be sent regardless of the value change. Default is 0.7 seconds.
 
     Returns:
-        mido.Message or None: A new MIDI Control Change message if the conditions are met, or None if no message should be sent.
+        mido.Message or None: A new MIDI Control Change message if the mapping exists, or None if no message should be sent.
     """
 
     # Check if the incoming NRPN number is in the NRPN to CC mapping table.
@@ -300,49 +296,18 @@ def nrpn_to_cc(nrpn_number, data_value, input_channel, channel_map, nrpn_to_cc_m
         
         # Determine the output channel based on the input channel, or use the default output channel.
         output_channel = channel_map.get(input_channel, default_output_channel)
-
-        # Initialize storage for last values and timestamps if not already set up.
-        if not hasattr(nrpn_to_cc, 'last_values'):
-            nrpn_to_cc.last_values = {}
-        if not hasattr(nrpn_to_cc, 'last_times'):
-            nrpn_to_cc.last_times = {}
-
-        # Create a key to uniquely identify the target CC on the output channel.
-        key = (output_channel, cc_number)
-        current_time = time.time()
-
-        # If this is the first time processing this NRPN, store its value and timestamp, then return None.
-        if key not in nrpn_to_cc.last_values:
-            nrpn_to_cc.last_values[key] = data_value
-            nrpn_to_cc.last_times[key] = current_time
-            return None
-
-        # Retrieve the last known value and time for this NRPN to CC conversion.
-        last_value = nrpn_to_cc.last_values[key]
-        last_time = nrpn_to_cc.last_times[key]
-
-        # Calculate the change in value and the time elapsed since the last message.
-        value_change = abs(data_value - last_value)
-        time_elapsed = current_time - last_time
-
-        # If the value change exceeds the threshold or the maximum interval has passed, send a new CC message.
-        if (value_change >= threshold or time_elapsed >= max_interval):
-            # Update the stored value and timestamp.
-            nrpn_to_cc.last_values[key] = data_value
-            nrpn_to_cc.last_times[key] = current_time
-
-            # Scale the data value to fit within the 7-bit MIDI range (0-127).
-            scaled_data_value = data_value >> 7
-
-            # Return a new MIDI Control Change message with the mapped CC number, scaled data value, and output channel.
-            return mido.Message('control_change', control=cc_number, value=scaled_data_value, channel=output_channel)
-        elif time_elapsed < min_interval:
-            # If the minimum interval hasn't passed, skip sending a new message.
-            return None
+        
+        # Scale the data value to fit within the 7-bit MIDI range (0-127).
+        scaled_data_value = data_value >> 7
+        
+        # Return a new MIDI Control Change message with the mapped CC number, scaled data value, and output channel.
+        return mido.Message('control_change', control=cc_number, value=scaled_data_value, channel=output_channel)
+    
     # If the NRPN number is not in the mapping table, return None.
     return None
 
-def is_nrpn_control(control, prev_control=None):
+
+def is_nrpn_control(control):
     """
     Check if a given control number is part of the NRPN (Non-Registered Parameter Number) control set.
 
@@ -361,15 +326,9 @@ def is_nrpn_control(control, prev_control=None):
         bool: True if the control number is part of the NRPN set, False otherwise.
     """
     # NRPN LSB and MSB are always part of NRPN.
-    if control in [98, 99]:
+    if control in [98, 99,38,6]:
         return True
 
-    # Check if the control is a Data Entry MSB or LSB and was preceded by an NRPN message.
-    if control in [6, 38] and prev_control in [98, 99]:
-        return True
-
-    # Otherwise, it's not an NRPN control.
-    return False
 
 
 def process_nrpn_messages(nrpn_cache, message):
@@ -708,9 +667,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                     stdin_queue_device2.task_done()
         except Exception as e:
             print(f"Error processing stdin messages: {e}")
-
-    # Initialize variable to store the previous MIDI message.
-    prev_message = None
+    
 
     # Open MIDI input and output ports and start processing messages.
     with mido.open_input(input_device_name) as inport, mido.open_output(output_device_name) as outport:
@@ -740,11 +697,10 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                     converted_message = None
                 
                     # Handle Control Change (CC) messages and apply conversions if necessary.
-                    if message.type == 'control_change' and prev_message is not None and prev_message.type == 'control_change':
+                    if message.type == 'control_change':
                         #print(prev_message)
                         # Check if the current message is part of an NRPN sequence.
-                        is_nrpn = is_nrpn_control(message.control, prev_message.control if prev_message else None)
-
+                        is_nrpn = is_nrpn_control(message.control)
                         if convert_func == cc_to_cc and device == "device1":
                             converted_message = cc_to_cc(message.control, message.value, message.channel, channel_map, cc_to_cc_map_device1)
                             send_messages()
@@ -759,20 +715,26 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                             if nrpn_data:
                                 nrpn_number, data_value = nrpn_data
                                 converted_message = nrpn_to_nrpn(nrpn_number, data_value, message.channel, channel_map, nrpn_to_nrpn_map_device1)
+                                send_messages()
                             
                         elif convert_func == nrpn_to_nrpn and is_nrpn and device == 'device2':
                             nrpn_data = process_nrpn_messages(nrpn_cache, message)
                             if nrpn_data:
                                 nrpn_number, data_value = nrpn_data
                                 converted_message = nrpn_to_nrpn(nrpn_number, data_value, message.channel, channel_map, nrpn_to_nrpn_map_device2)
+                                send_messages()
                         elif convert_func == cc_to_nrpn:
                             converted_message = cc_to_nrpn(message.control, message.value, message.channel, channel_map, cc_to_nrpn_map)
+                            send_messages()
                         elif convert_func == nrpn_to_cc and is_nrpn:
                             nrpn_data = process_nrpn_messages(nrpn_cache, message)
+                            print("nrpn data", nrpn_data)
                             if nrpn_data:
                                 nrpn_number, data_value = nrpn_data
                                 converted_message = nrpn_to_cc(nrpn_number, data_value, message.channel, channel_map, nrpn_to_cc_map)
-                
+                                print("converted message", converted_message)
+                                send_messages()
+                   
                     # If a converted message exists, add it to the message queue.
                     if converted_message:
                         if isinstance(converted_message, list):
@@ -789,9 +751,10 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                 for step in steps:
                                     if " AND " in step[device]:
                                         steps_list = step[device].split(" AND ")
-                                        if all((str(msg) == s for msg in message_buffer) for s in steps_list):
+                                        if len(message_buffer) == len(steps_list) and all(str(msg) == s for msg, s in zip(message_buffer, steps_list)):
                                             print(f"Complete sequence matches for button {button_id}, action {action}")
-                                            special_message_result = handle_special_message(button_id)
+                                            
+                                            special_message_result = handle_special_message(button_id)                                           
                                             print("special message", special_message_result)
                                             if On_air_lights_enabled == "True":
                                                 handle_on_air_lights(On_air_lights_enabled, button_id, action, ser)
@@ -804,6 +767,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                                             msg = mido.Message.from_str(step_msg)
                                                             message_queue.append(msg)
                                                             print(f"Appending mirrored step to queue for {opposite_device}: {msg}")
+                                                            send_messages()
                                                         except Exception as e:
                                                             print(f"Error converting mirrored step from string: {e}")
                                             message_buffer.clear()
@@ -827,8 +791,6 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                                         message_buffer.clear()
                                         break
 
-                    # Update the previous message to the current one after processing.
-                    prev_message = message
 
                 # Send all messages queued for output.
                 send_messages()
