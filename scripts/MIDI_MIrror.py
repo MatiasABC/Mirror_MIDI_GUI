@@ -488,7 +488,7 @@ def radio_assist_midi(device, input_device_name, output_device_name, step_map, D
                 stdin_queue_device.join()
 
             # Read all pending MIDI messages from the input device.
-            messages = list(inport.iter_pending())
+            messages = (inport.iter_pending())
             if messages:
                 for message in messages:                    
                     message_buffer.append(message)
@@ -727,8 +727,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                             converted_message = cc_to_nrpn(message.control, message.value, message.channel, channel_map, cc_to_nrpn_map)
                             send_messages()
                         elif convert_func == nrpn_to_cc and is_nrpn:
-                            nrpn_data = process_nrpn_messages(nrpn_cache, message)
-                            print("nrpn data", nrpn_data)
+                            nrpn_data = process_nrpn_messages(nrpn_cache, message)                            
                             if nrpn_data:
                                 nrpn_number, data_value = nrpn_data
                                 converted_message = nrpn_to_cc(nrpn_number, data_value, message.channel, channel_map, nrpn_to_cc_map)
@@ -742,6 +741,7 @@ def mirror_midi(device, input_device_name, output_device_name, channel_map, cc_t
                             message_buffer.clear()
                         else:
                             message_queue.append(converted_message)
+                            message_buffer.clear()
                         continue
 
                     # If no conversion is needed and no NRPN data is being cached, handle message matching.
